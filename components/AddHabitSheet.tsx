@@ -2,14 +2,14 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import type { ComponentType } from "react";
+import type { LucideIcon } from "lucide-react";
 
 type HabitFrequency = "daily" | "weekly" | "monthly";
 
 interface AddHabitSheetProps<IconName extends string> {
   open: boolean;
   surfaceClassName: string;
-  iconMap: Record<IconName, ComponentType<{ size?: number }>>;
+  iconMap: Record<IconName, LucideIcon>;
   weekDays: { value: number; label: string }[];
   monthDays: number[];
   newTitle: string;
