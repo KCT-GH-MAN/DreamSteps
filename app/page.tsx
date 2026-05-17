@@ -1213,7 +1213,7 @@ export default function HomePage() {
         <header className="flex justify-between items-start pt-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <p className="text-gray-500 text-xs font-bold tracking-[0.2em] uppercase">
-              {activeTab === "home" ? greeting : t.progressStats}
+              {activeTab === "home" ? greeting : t.common.stats}
             </p>
             <h1 className="text-4xl font-black mt-1">
               {activeTab === "home" ? t.common.appName : t.common.stats}
