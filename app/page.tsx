@@ -82,8 +82,8 @@ const THEMES: Record<
   }
 > = {
   midnight: {
-    background: "bg-[#0F1115]",
-    surface: "bg-[#171A21]",
+    background: "bg-[#131722]",
+    surface: "bg-[#1B2130]",
     surfaceSoft: "bg-white/5",
     primaryGradient: "from-[#7C9EFF] to-[#9B8CFF]",
     primaryShadow: "shadow-[0_20px_60px_rgba(124,158,255,0.25)]",
@@ -92,8 +92,8 @@ const THEMES: Record<
     accentBg: "bg-[#7C9EFF]/10",
   },
   forest: {
-    background: "bg-[#0E1512]",
-    surface: "bg-[#16211C]",
+    background: "bg-[#131C18]",
+    surface: "bg-[#1C2822]",
     surfaceSoft: "bg-emerald-400/10",
     primaryGradient: "from-[#34D399] to-[#22C55E]",
     primaryShadow: "shadow-[0_20px_60px_rgba(52,211,153,0.22)]",
@@ -102,8 +102,8 @@ const THEMES: Record<
     accentBg: "bg-emerald-400/10",
   },
   sunset: {
-    background: "bg-[#17110F]",
-    surface: "bg-[#241815]",
+    background: "bg-[#1B1412]",
+    surface: "bg-[#2A1D19]",  
     surfaceSoft: "bg-orange-400/10",
     primaryGradient: "from-[#FB923C] to-[#F472B6]",
     primaryShadow: "shadow-[0_20px_60px_rgba(251,146,60,0.24)]",
@@ -112,8 +112,8 @@ const THEMES: Record<
     accentBg: "bg-orange-400/10",
   },
   arctic: {
-    background: "bg-[#0D141A]",
-    surface: "bg-[#172129]",
+    background: "bg-[#111A24]",
+    surface: "bg-[#1A2633]",
     surfaceSoft: "bg-cyan-300/10",
     primaryGradient: "from-[#67E8F9] to-[#60A5FA]",
     primaryShadow: "shadow-[0_20px_60px_rgba(103,232,249,0.22)]",
@@ -1208,14 +1208,16 @@ export default function HomePage() {
 
   return (
     <main
-  className={`min-h-screen ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
->
+  className={`relative overflow-hidden min-h-screen ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
+><div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(124,158,255,0.08),transparent_35%)]" />
   <div className="mx-auto w-full max-w-md md:max-w-2xl pb-32">
         <header className="flex justify-between items-start pt-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <p className="text-gray-500 text-xs font-bold tracking-[0.2em] uppercase">
-              {activeTab === "home" ? greeting : t.common.stats}
-            </p>
+            {activeTab === "home" && (
+  <p className="text-gray-500 text-xs font-bold tracking-[0.2em] uppercase">
+    {greeting}
+  </p>
+)}
             <h1 className="text-4xl font-black mt-1">
               {activeTab === "home" ? t.common.appName : t.common.stats}
             </h1>
