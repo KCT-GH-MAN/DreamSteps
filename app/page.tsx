@@ -1208,8 +1208,8 @@ export default function HomePage() {
 
   return (
     <main
-  className={`relative overflow-hidden min-h-screen ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
-><div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(124,158,255,0.08),transparent_35%)]" />
+  className={`min-h-screen ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
+>
   <div className="mx-auto w-full max-w-md md:max-w-2xl pb-32">
         <header className="flex justify-between items-start pt-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
