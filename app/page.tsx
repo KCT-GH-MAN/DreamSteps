@@ -912,8 +912,7 @@ export default function HomePage() {
   const weeklyStats = getWeeklyStats(analytics);
   const weekDays = getWeekDays(language);
   const recoveryMessage = getRecoveryMessage(lastCompletedDate, t);
-  const hasCompletedAnyToday = todayHabits.some((habit) => habit.completed);
-  const focusSessions = getFocusSessions(t);
+    const focusSessions = getFocusSessions(t);
   const moods = getMoods(t);
   const suggestedSessionType = getSessionTypeByMood(dailyReflection.mood);
   const suggestedSession = getFocusSessionById(suggestedSessionType, focusSessions);
