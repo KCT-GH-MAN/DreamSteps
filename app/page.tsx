@@ -1387,7 +1387,7 @@ export default function HomePage() {
 
               <section className="mt-12">
                 <div className="mb-6 flex items-center justify-between">
-                  <h3 className="text-xl font-black">{t.todayHabits}</h3>
+                  <h3 className="text-xl font-black">{t.habits.today}</h3>
                   <div className="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-gray-500">
                     {todayHabits.filter((habit) => habit.completed).length}/{todayHabits.length}
                   </div>
@@ -1435,7 +1435,7 @@ export default function HomePage() {
               {futureHabits.length > 0 && (
                 <section className="mt-10">
                   <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-600 mb-4">
-                    {t.notToday}
+                    {t.habits.notToday}
                   </h3>
 
                   <div className="space-y-3">
