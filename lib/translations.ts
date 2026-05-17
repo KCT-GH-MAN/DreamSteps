@@ -104,6 +104,7 @@ export const translations = {
       monthly: "Hằng tháng",
       defaultRead: "Đọc sách 10p",
       defaultWorkout: "Tập gym",
+      recoveryMessage:"Không sao cả. Chỉ cần quay lại với một bước nhỏ hôm nay thôi ✨",
     },
 
     addHabit: {
@@ -257,6 +258,7 @@ export const translations = {
       monthly: "Monthly",
       defaultRead: "Read 10m",
       defaultWorkout: "Workout",
+      recoveryMessage:"It's okay. Just get back with a small step today ✨",
     },
 
     addHabit: {
