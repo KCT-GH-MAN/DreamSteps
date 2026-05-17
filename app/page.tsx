@@ -1231,7 +1231,11 @@ export default function HomePage() {
               onClick={toggleLanguage}
               className="rounded-2xl border border-white/5 bg-white/5 px-3.5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-gray-300 transition-colors hover:bg-white/10"
             >
-              {language === "vi" ? "VI" : "EN"}
+              <img
+                src={language === "vi" ? "/flags/vn.svg" : "/flags/us.svg"}
+                alt="language"
+                className="h-4 w-6 object-cover drop-shadow-[0_0_6px_rgba(255,255,255,0.15)]"
+              />
             </button>
 
             {activeTab === "home" && (
@@ -1642,7 +1646,7 @@ export default function HomePage() {
                             </p>
                           )}
 
-                          <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-gray-600">
+                          <p className="mt-3 text-lg uppercase tracking-[0.18em] text-gray-600">
                             {new Date(entry.createdAt).toLocaleTimeString(language === "vi" ? "vi-VN" : "en-US", {
                               hour: "2-digit",
                               minute: "2-digit",
