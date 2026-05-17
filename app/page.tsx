@@ -233,10 +233,10 @@ function getWeekDays(language: Language) {
 
 function getMoods(t: ReturnType<typeof useLanguage>["t"]) {
   return [
-    { value: "focused", label: t.moods.focused, icon: Target },
-    { value: "tired", label: t.moods.tired, icon: BatteryLow },
-    { value: "distracted", label: t.moods.distracted, icon: CloudLightning },
-    { value: "motivated", label: t.moods.motivated, icon: Flame },
+    { value: "focused" as const , label: t.moods.focused, icon: Target },
+    { value: "tired" as const, label: t.moods.tired, icon: BatteryLow },
+    { value: "distracted" as const, label: t.moods.distracted, icon: CloudLightning },
+    { value: "motivated" as const, label: t.moods.motivated, icon: Flame },
   ];
 }
 
