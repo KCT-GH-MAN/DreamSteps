@@ -1207,8 +1207,10 @@ export default function HomePage() {
   if (!mounted) return null;
 
   return (
-    <main className={`min-h-screen ${currentTheme.background} text-white flex justify-center px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}>
-      <div className="w-full max-w-md md:max-w-2xl pb-32">
+    <main
+  className={`min-h-screen ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
+>
+  <div className="mx-auto w-full max-w-md md:max-w-2xl pb-32">
         <header className="flex justify-between items-start pt-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <p className="text-gray-500 text-xs font-bold tracking-[0.2em] uppercase">
