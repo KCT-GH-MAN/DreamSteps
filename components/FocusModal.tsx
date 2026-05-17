@@ -72,7 +72,7 @@ const FOCUS_MODAL_TEXT = {
     completionSubtitle: "Một bước nhỏ vẫn được tính.",
     startLine: "Chỉ cần bắt đầu. Không cần đợi tới khi cảm thấy sẵn sàng!",
     confirmClose: (minutesLeft: number) =>
-      `Còn khoảng ${minutesLeft} phút nữa. Bạn có chắc muốn dừng phiên focus không?`,
+      `Còn khoảng ${minutesLeft} phút nữa. Đừng bỏ cuộc!`,
   },
 
   en: {
@@ -92,7 +92,7 @@ const FOCUS_MODAL_TEXT = {
     completionSubtitle: "A small step still counts.",
     startLine: "Just begin. No need to wait until you feel ready!",
     confirmClose: (minutesLeft: number) =>
-      `About ${minutesLeft} minutes left. Are you sure you want to stop this focus session?`,
+      `About ${minutesLeft} minutes left. Don't give up!`,
   },
 } as const;
 
@@ -288,6 +288,7 @@ export default function FocusModal({
   const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -335,6 +336,7 @@ export default function FocusModal({
       setSelectedSound(rememberedSound || adaptiveSound);
       setSoundEnabled(false);
       setHasCompleted(false);
+      setShowCloseConfirm(false);
     }
   }, [open, totalSeconds, autoStart, sessionType]);
 
@@ -444,21 +446,11 @@ export default function FocusModal({
   };
 
   const handleClose = () => {
-    if (isActive && timeLeft > 0 && !showCompliment) {
-      const minutesLeft = Math.ceil(timeLeft / 60);
-      const shouldClose = window.confirm(
-        text.confirmClose(minutesLeft)
-      );
-
-      if (!shouldClose) return;
+    if (isActive && timeLeft > 0) {
+      setShowCloseConfirm(true);
+      return;
     }
 
-    if (fadeIntervalRef.current) {
-      clearInterval(fadeIntervalRef.current);
-    }
-
-    audioRef.current?.pause();
-    setSoundEnabled(false);
     onClose();
   };
 
@@ -690,7 +682,61 @@ export default function FocusModal({
                 </button>
               </motion.div>
             )}
+  
+          <AnimatePresence>
+            {showCloseConfirm && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-[120] flex items-center justify-center bg-black/70 px-5 backdrop-blur-md"
+              >
+                <motion.div
+                  initial={{ scale: 0.94, opacity: 0, y: 12 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.94, opacity: 0, y: 12 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 24 }}
+                  className="w-full max-w-sm rounded-[32px] border border-white/10 bg-[#171A21] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#AFC2FF]">
+                    {language === "vi" ? "Phiên đang chạy" : "Session in progress"}
+                  </p>
+
+                  <h3 className="mt-2 text-2xl font-black text-white">
+                    {language === "vi" ? "Dừng phiên tập trung?" : "Stop focus session?"}
+                  </h3>
+
+                  <p className="mt-3 text-sm leading-relaxed text-gray-400">
+                    {text.confirmClose(Math.ceil(timeLeft / 60))}
+                  </p>
+
+                  <div className="mt-6 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowCloseConfirm(false)}
+                      className="flex-1 rounded-2xl bg-white/5 py-3.5 text-sm font-black text-gray-200 transition-colors hover:bg-white/10"
+                    >
+                      {language === "vi" ? "Tiếp tục" : "Continue"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCloseConfirm(false);
+                        setIsActive(false);
+                        onClose();
+                      }}
+                      className="flex-1 rounded-2xl border border-red-400/20 bg-red-500/15 py-3.5 text-sm font-black text-red-200 transition-colors hover:bg-red-500/20"
+                    >
+                      {language === "vi" ? "Dừng" : "Stop"}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
           </AnimatePresence>
+
+        </AnimatePresence>
         </motion.div>
       </div>
     </AnimatePresence>

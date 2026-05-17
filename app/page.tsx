@@ -1631,11 +1631,11 @@ export default function HomePage() {
   </div>
 
   {index !== todayTimeline.slice(0, 8).length - 1 && (
-    <div className="mt-2 h-full min-h-[110px] w-px bg-white/5" />
+    <div className="mt-2 h-full min-h-[72px] w-px bg-white/5" />
   )}
 </div>
 
-                        <div className="flex-1 rounded-2xl border border-white/5 bg-white/[0.03] px-5 py-4">
+                        <div className="flex-1 rounded-2xl border border-white/5 bg-white/[0.03] px-5 py-3.5">
                           <p className="text-sm font-bold text-white">
                             {entry.title}
                           </p>
@@ -1646,7 +1646,7 @@ export default function HomePage() {
                             </p>
                           )}
 
-                          <p className="mt-3 text-lg uppercase tracking-[0.18em] text-gray-600">
+                          <p className="mt-3 text-[12px] font-medium tracking-[0.08em] text-gray-500">
                             {new Date(entry.createdAt).toLocaleTimeString(language === "vi" ? "vi-VN" : "en-US", {
                               hour: "2-digit",
                               minute: "2-digit",
