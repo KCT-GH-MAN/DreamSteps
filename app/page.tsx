@@ -1224,27 +1224,7 @@ export default function HomePage() {
           </motion.div>
 
           <div className="flex items-center gap-2">
-            <button
-  type="button"
-  onClick={() => {
-    const confirmed = window.confirm(
-      language === "vi"
-        ? "Xóa toàn bộ dữ liệu DreamSteps?"
-        : "Delete all DreamSteps data?"
-    );
 
-    if (!confirmed) return;
-
-    Object.keys(localStorage)
-      .filter((key) => key.startsWith("ds-"))
-      .forEach((key) => localStorage.removeItem(key));
-
-    window.location.reload();
-  }}
-  className="rounded-2xl border border-red-500/20 bg-red-500/10 px-3 py-3 text-[10px] font-black uppercase tracking-[0.16em] text-red-300 transition-all hover:bg-red-500/15"
->
-  RESET
-</button>
             <button
               type="button"
               aria-label={t.common.changeLanguage}
