@@ -1774,7 +1774,7 @@ export default function HomePage() {
 
       <AnimatePresence>
         {showWelcome && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1791,12 +1791,12 @@ export default function HomePage() {
                 stiffness: 140,
                 damping: 22,
               }}
-              className={`relative w-full max-w-sm overflow-hidden rounded-[44px] h-[650px] border border-white/[0.08] ${currentTheme.surface} px-8 py-10 text-center shadow-[0_40px_100px_rgba(0,0,0,0.55)]`}
+              className={`relative w-full max-w-[360px] overflow-hidden rounded-[38px] border border-white/[0.08] ${currentTheme.surface} px-6 py-7 text-center shadow-[0_40px_100px_rgba(0,0,0,0.55)] sm:max-w-sm sm:px-7 sm:py-8`}
             >
               <motion.div
                 aria-hidden="true"
                 animate={{
-                  opacity: [0.12, 0.26, 0.12],
+                  opacity: [0.12, 0.24, 0.12],
                   scale: [0.94, 1.08, 0.94],
                 }}
                 transition={{
@@ -1804,14 +1804,14 @@ export default function HomePage() {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className={`absolute pointer-events-none left-1/2 top-8 h-52 w-52 -translate-x-1/2 rounded-full bg-gradient-to-br ${currentTheme.primaryGradient} blur-[95px]`}
+                className={`absolute pointer-events-none left-1/2 top-4 h-44 w-44 -translate-x-1/2 rounded-full bg-gradient-to-br ${currentTheme.primaryGradient} blur-[85px]`}
               />
 
-              <div className="absolute inset-0 pointer-events-none rounded-[44px] h-[650px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05),transparent_42%)]" />
+              <div className="absolute inset-0 pointer-events-none rounded-[38px] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.055),transparent_42%)]" />
 
               <motion.div
                 animate={{
-                  y: [0, -5, 0],
+                  y: [0, -4, 0],
                   scale: [1, 1.02, 1],
                 }}
                 transition={{
@@ -1819,11 +1819,11 @@ export default function HomePage() {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="relative mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-[28px] border border-white/10 bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl"
+                className="relative mx-auto flex h-[60px] w-[60px] items-center justify-center rounded-[24px] border border-white/10 bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl"
               >
                 <motion.div
                   animate={{
-                    opacity: [0.2, 0.45, 0.2],
+                    opacity: [0.18, 0.42, 0.18],
                     scale: [0.9, 1.12, 0.9],
                   }}
                   transition={{
@@ -1831,57 +1831,61 @@ export default function HomePage() {
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className="absolute inset-0 rounded-[28px] bg-orange-300/10 blur-2xl"
+                  className="absolute inset-0 rounded-[24px] bg-orange-300/10 blur-2xl"
                 />
 
-                <Flame size={26} className="relative text-white" />
+                <Flame size={24} className="relative text-white" />
               </motion.div>
 
-              <div className="mt-14">
-            <div className="relative z-20 mt-8 flex justify-center">
-  <div className="flex rounded-2xl border border-white/10 bg-white/[0.04] p-1 backdrop-blur-xl">
-    <button
-      type="button"
-      onClick={() => setLanguage("vi")}
-      className={`min-w-[64px] rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition-all ${
-        language === "vi"
-          ? "bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.12)]"
-          : "text-gray-500 hover:text-white"
-      }`}
-    >
-      VI
-    </button>
+              <div className="relative z-20 mt-7 flex justify-center">
+                <div className="flex rounded-2xl border border-white/10 bg-white/[0.04] p-1 backdrop-blur-xl">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage("vi")}
+                    className={`min-w-[35px] rounded-xl px-2 py-1 text-xs font-black uppercase tracking-[0.14em] transition-all ${
+                      language === "vi"
+                        ? "bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.12)]"
+                        : "text-gray-500 hover:text-white"
+                    }`}
+                  >
+                    VI
+                  </button>
 
-    <button
-      type="button"
-      onClick={() => setLanguage("en")}
-      className={`min-w-[64px] rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition-all ${
-        language === "en"
-          ? "bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.12)]"
-          : "text-gray-500 hover:text-white"
-      }`}
-    >
-      EN
-    </button>
-  </div>
-</div>
-<br />
-              <h2 className="text-[28px] font-black leading-[1.14] tracking-[-0.045em] text-white">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage("en")}
+                    className={`min-w-[35px] rounded-xl px-2 py-1 text-xs font-black uppercase tracking-[0.14em] transition-all ${
+                      language === "en"
+                        ? "bg-white text-black shadow-[0_4px_18px_rgba(255,255,255,0.12)]"
+                        : "text-gray-500 hover:text-white"
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative z-10 mt-7">
+                <p className="text-[15px] font-black uppercase tracking-[0.24em] text-[#AFC2FF]/80">
+                  DreamSteps
+                </p>
+
+                <h2 className="mx-auto mt-3 max-w-[17ch] text-[20px] font-black leading-[1.04] tracking-[-0.055em] text-white sm:text-[32px]">
                   {t.welcome.title}
                 </h2>
 
-                <p className="mt-5 text-[19px] font-semibold tracking-[-0.03em] text-gray-300">
+                <p className="mx-auto mt-4 max-w-[22ch] text-[17px] font-bold leading-snug tracking-[-0.03em] text-gray-300">
                   {t.welcome.subtitle}
                 </p>
               </div>
 
-              <p className="mx-auto mt-8 min-h-[52px] max-w-[30ch] text-[14px] leading-[1.75] text-gray-500 text-balance">
-  {t.welcome.quote}
-  <br />
-  {t.welcome.quoteSecond}
-</p>
+              <p className="relative z-10 mx-auto mt-6 max-w-[28ch] text-[13px] leading-relaxed text-gray-500 text-balance">
+                {t.welcome.quote}
+                <br />
+                {t.welcome.quoteSecond}
+              </p>
 
-              <div className="mt-10 flex items-center justify-center gap-2">
+              <div className="relative z-10 mt-7 flex items-center justify-center gap-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-white/15" />
                 <div className="h-1.5 w-7 rounded-full bg-white/45" />
                 <div className="h-1.5 w-1.5 rounded-full bg-white/15" />
@@ -1901,7 +1905,7 @@ export default function HomePage() {
                     setOpenFocus(true);
                   }, 220);
                 }}
-                className="mt-11 mx-auto flex w-fit min-w-[220px] items-center justify-center rounded-[24px] border border-white/10 bg-white/[0.08] px-9 py-3.5 text-sm font-black uppercase tracking-[0.24em] text-white backdrop-blur-xl shadow-[0_12px_40px_rgba(255,255,255,0.06)] transition-all hover:bg-white/[0.11] active:scale-[0.99]"
+                className="relative z-10 mt-7 mx-auto flex w-fit min-w-[210px] items-center justify-center rounded-[24px] border border-white/10 bg-white/[0.08] px-8 py-3.5 text-sm font-black uppercase tracking-[0.24em] text-white backdrop-blur-xl shadow-[0_12px_40px_rgba(255,255,255,0.06)] transition-all hover:bg-white/[0.11] active:scale-[0.99]"
               >
                 {t.welcome.startSmall}
               </button>
@@ -1912,7 +1916,7 @@ export default function HomePage() {
                   localStorage.setItem("ds-welcome-seen", "true");
                   setShowWelcome(false);
                 }}
-                className="mt-6 text-[12px] font-semibold tracking-[0.01em] text-gray-600 transition-colors hover:text-gray-400"
+                className="relative z-10 mt-4 text-[12px] font-semibold tracking-[0.01em] text-gray-600 transition-colors hover:text-gray-400"
               >
                 {t.welcome.explore}
               </button>
