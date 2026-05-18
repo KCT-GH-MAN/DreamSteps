@@ -645,7 +645,7 @@ export default function FocusModal({
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.9 }}
-                className="absolute inset-0 bg-[#171A21] rounded-[50px] p-12 flex flex-col items-center justify-center border border-white/10 shadow-2xl z-20"
+                className="absolute inset-0 bg-[#171A21] rounded-[34px] sm:rounded-[40px] px-8 py-12 flex flex-col items-center justify-center border border-white/10 shadow-2xl z-20"
               >
                 <button
                   type="button"
@@ -665,11 +665,11 @@ export default function FocusModal({
                   />
                 </div>
 
-                <h3 className="text-2xl font-black text-white italic tracking-tight mb-4">
-                  {text.youDidIt}
-                </h3>
+                <h3 className="text-[42px] font-black text-white italic tracking-[-0.04em] mb-5 leading-none">
+  {text.youDidIt}
+</h3>
 
-                <p className="text-[#7EE2B8] text-lg font-bold px-4 leading-relaxed transition-all duration-1000">
+                <p className="max-w-[18ch] text-center text-[#7EE2B8] text-[22px] font-black leading-[1.45] tracking-[-0.02em] transition-all duration-1000">
                   {currentCompliment}
                 </p>
 
