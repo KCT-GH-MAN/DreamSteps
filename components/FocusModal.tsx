@@ -70,7 +70,7 @@ const FOCUS_MODAL_TEXT = {
     youDidIt: "Bạn đã làm được rồi đấy!",
     completionTitle: "Hoàn thành rồi.",
     completionSubtitle: "Một bước nhỏ vẫn được tính.",
-    startLine: "Chỉ cần bắt đầu. Không cần đợi tới khi cảm thấy sẵn sàng!",
+    startLine: "Hãy bắt đầu. Đừng đợi tới khi cảm thấy sẵn sàng!",
     confirmClose: (minutesLeft: number) =>
       `Còn khoảng ${minutesLeft} phút nữa. Đừng bỏ cuộc!`,
   },
@@ -472,8 +472,8 @@ export default function FocusModal({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.85, opacity: 0, y: 20 }}
           className={`relative ${APP_THEMES[appTheme as keyof typeof APP_THEMES]?.card || "bg-[#171A21]"} w-full ${
-            deepFocus ? "max-w-2xl" : "max-w-sm md:max-w-lg"
-          } max-h-[calc(100dvh-20px)] overflow-y-auto rounded-[34px] sm:rounded-[40px] p-4 sm:p-6 md:p-8 border border-white/10 text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)] overflow-hidden`}
+  deepFocus ? "max-w-2xl" : "max-w-sm md:max-w-lg"
+} max-h-[calc(100dvh-16px)] overflow-hidden rounded-[34px] sm:rounded-[40px] p-4 sm:p-6 md:p-8 border border-white/10 text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)]`}
         >
           {!showCompliment && (
             <div className="absolute top-8 right-8 z-10 flex gap-2">
@@ -645,38 +645,31 @@ export default function FocusModal({
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.9 }}
-                className="absolute inset-0 bg-[#171A21] rounded-[34px] sm:rounded-[40px] px-8 py-12 flex flex-col items-center justify-center border border-white/10 shadow-2xl z-20"
+                className="absolute inset-0 bg-[#171A21] rounded-[34px] sm:rounded-[40px] px-6 py-8 flex flex-col items-center justify-center border border-white/10 shadow-2xl z-20 overflow-hidden"
               >
-                <button
-                  type="button"
-                  aria-label="Đóng lời chúc mừng"
-                  onClick={handleClose}
-                  className="absolute top-8 right-8 text-gray-600 hover:text-white transition-colors"
-                >
-                  <X size={28} />
-                </button>
+                
 
-                <div className="text-[#7EE2B8] mb-6">
+                <div className="text-[#7EE2B8] mb-4">
                   <PartyPopper
-                    size={64}
+                    size={48}
                     fill="#7EE2B8"
                     strokeWidth={0}
                     className="mx-auto"
                   />
                 </div>
 
-                <h3 className="text-[42px] font-black text-white italic tracking-[-0.04em] mb-5 leading-none">
-  {text.youDidIt}
-</h3>
+                <h3 className="max-w-[12ch] text-[34px] sm:text-[38px] font-black text-white italic tracking-[-0.04em] mb-4 leading-[0.95]">
+                  {text.youDidIt}
+                </h3>
 
-                <p className="max-w-[18ch] text-center text-[#7EE2B8] text-[22px] font-black leading-[1.45] tracking-[-0.02em] transition-all duration-1000">
+                <p className="max-w-[22ch] text-center text-[#7EE2B8] text-[18px] sm:text-[20px] font-black leading-[1.35] tracking-[-0.02em] transition-all duration-1000">
                   {currentCompliment}
                 </p>
 
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="mt-12 bg-[#7EE2B8] text-black font-black uppercase tracking-widest px-10 py-4 rounded-full shadow-lg hover:scale-[1.03] transition-all"
+                  className="mt-7 bg-[#7EE2B8] text-black font-black uppercase tracking-widest px-9 py-3.5 rounded-full shadow-lg hover:scale-[1.03] transition-all"
                 >
                   {text.keepGoing}
                 </button>
