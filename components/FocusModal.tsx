@@ -473,7 +473,7 @@ export default function FocusModal({
           exit={{ scale: 0.85, opacity: 0, y: 20 }}
           className={`relative ${APP_THEMES[appTheme as keyof typeof APP_THEMES]?.card || "bg-[#171A21]"} w-full ${
             deepFocus ? "max-w-2xl" : "max-w-sm md:max-w-lg"
-          } max-h-[calc(100dvh-24px)] overflow-y-auto hide-scrollbar rounded-[36px] p-5 sm:p-7`}
+          } max-h-[calc(100dvh-24px)] overflow-y-auto rounded-[36px] sm:rounded-[42px] p-5 sm:p-8 md:p-10 border border-white/10 text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)] overflow-hidden`}
         >
           {!showCompliment && (
             <div className="absolute top-8 right-8 z-10 flex gap-2">

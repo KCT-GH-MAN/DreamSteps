@@ -1930,7 +1930,6 @@ export default function HomePage() {
         onClose={() => setOpenFocus(false)}
         language={language}
       />
-      className={`relative overflow-x-hidden overflow-y-auto hide-scrollbar min-h-screen ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
     </main>
   );
 }
