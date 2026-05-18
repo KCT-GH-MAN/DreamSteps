@@ -473,7 +473,7 @@ export default function FocusModal({
           exit={{ scale: 0.85, opacity: 0, y: 20 }}
           className={`relative ${APP_THEMES[appTheme as keyof typeof APP_THEMES]?.card || "bg-[#171A21]"} w-full ${
             deepFocus ? "max-w-2xl" : "max-w-sm md:max-w-lg"
-          } max-h-[calc(100dvh-24px)] overflow-y-auto rounded-[36px] sm:rounded-[42px] p-5 sm:p-8 md:p-10 border border-white/10 text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)] overflow-hidden`}
+          } max-h-[calc(100dvh-20px)] overflow-y-auto rounded-[34px] sm:rounded-[40px] p-4 sm:p-6 md:p-8 border border-white/10 text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)] overflow-hidden`}
         >
           {!showCompliment && (
             <div className="absolute top-8 right-8 z-10 flex gap-2">
@@ -506,8 +506,8 @@ export default function FocusModal({
             {title === "Tiny Start" ? localizedSessionLabel : title || localizedSessionLabel}
           </span>
 
-          <div className="relative my-12 sm:my-16 flex justify-center">
-            <div className="relative flex h-[260px] w-[260px] items-center justify-center">
+          <div className="relative my-7 sm:my-9 flex justify-center">
+            <div className="relative flex h-[220px] w-[220px] sm:h-[236px] sm:w-[236px] items-center justify-center">
               <svg
                 viewBox="0 0 260 260"
                 className="absolute inset-0 h-full w-full -rotate-90"
@@ -535,7 +535,7 @@ export default function FocusModal({
               </svg>
 
               <div className="relative z-10 flex max-w-[210px] flex-col items-center justify-center text-center">
-                <div className="max-w-full whitespace-nowrap text-[52px] sm:text-[60px] font-black italic tracking-[-0.08em] text-white leading-tight tabular-nums px-2">
+                <div className="max-w-full whitespace-nowrap text-[48px] sm:text-[56px] font-black italic tracking-[-0.08em] text-white leading-tight tabular-nums px-2">
                   {formatTime(timeLeft)}
                 </div>
 
@@ -548,12 +548,12 @@ export default function FocusModal({
 
           {!showCompliment && (
             <>
-              <div className="flex items-center justify-center gap-8">
+              <div className="flex items-center justify-center gap-6">
                 <button
                   type="button"
                   aria-label="Reset phiên focus"
                   onClick={resetSession}
-                  className="h-14 w-14 rounded-2xl bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center"
+                  className="h-12 w-12 rounded-2xl bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center"
                 >
                   <RotateCcw size={24} />
                 </button>
@@ -562,23 +562,23 @@ export default function FocusModal({
                   type="button"
                   aria-label={isActive ? "Tạm dừng phiên focus" : "Bắt đầu phiên focus"}
                   onClick={() => setIsActive((prev) => !prev)}
-                  className={`h-24 w-24 rounded-[32px] flex items-center justify-center transition-all shadow-2xl ${
+                  className={`h-20 w-20 rounded-[28px] flex items-center justify-center transition-all shadow-2xl ${
                     isActive
                       ? "bg-white text-black scale-95"
                       : "bg-[#7C9EFF] text-white shadow-[#7C9EFF]/30 scale-100"
                   }`}
                 >
                   {isActive ? (
-                    <Pause size={40} fill="currentColor" />
+                    <Pause size={34} fill="currentColor" />
                   ) : (
-                    <Play size={40} fill="currentColor" className="ml-2" />
+                    <Play size={34} fill="currentColor" className="ml-1.5" />
                   )}
                 </button>
 
-                <div className="w-14" />
+                <div className="w-12" />
               </div>
 
-              <p className="mt-7 rounded-2xl bg-white/5 px-4 py-3 text-xs font-bold leading-relaxed text-gray-500">
+              <p className="mt-5 rounded-2xl bg-white/5 px-4 py-2.5 text-xs font-bold leading-relaxed text-gray-500">
   <span className="block">{text.startLine}</span>
   <span className="block">
     
@@ -588,7 +588,7 @@ export default function FocusModal({
           )}
 
           {!deepFocus && !showCompliment && (
-            <div className="mt-10">
+            <div className="mt-7">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-600">
                   {text.ambientSound}
@@ -619,13 +619,13 @@ export default function FocusModal({
     setSelectedSound(sound.id);
     setSoundEnabled(true);
   }}
-  className={`h-14 w-14 rounded-2xl border flex items-center justify-center transition-all ${
+  className={`h-12 w-12 rounded-2xl border flex items-center justify-center transition-all ${
     active
       ? "border-[#7C9EFF] bg-[#7C9EFF]/20 text-white"
       : "border-white/5 bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white"
   }`}
 >
-  <Icon size={22} />
+  <Icon size={20} />
 </button>
                   );
                 })}
@@ -634,7 +634,7 @@ export default function FocusModal({
           )}
 
           {!showCompliment && (
-            <p className="mt-10 text-gray-600 text-xs font-bold italic opacity-60">
+            <p className="mt-7 text-gray-600 text-xs font-bold italic opacity-60">
               {text.deepQuote}
             </p>
           )}
@@ -707,7 +707,9 @@ export default function FocusModal({
                   </h3>
 
                   <p className="mt-3 text-sm leading-relaxed text-gray-400">
-                    {text.confirmClose(Math.ceil(timeLeft / 60))}
+                    {language === "vi"
+                      ? `Còn khoảng ${Math.ceil(timeLeft / 60)} phút nữa trong phiên này.`
+                      : `About ${Math.ceil(timeLeft / 60)} minutes left in this session.`}
                   </p>
 
                   <div className="mt-6 flex gap-3">
