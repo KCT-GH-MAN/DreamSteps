@@ -16,6 +16,7 @@ interface AddHabitSheetProps<IconName extends string> {
   newMinutes: string;
   newIcon: IconName;
   newFrequency: HabitFrequency;
+  newReminderTime: string;
   newDaysOfWeek: number[];
   newDaysOfMonth: number[];
   labels: {
@@ -26,6 +27,7 @@ interface AddHabitSheetProps<IconName extends string> {
     frequencyDaily: string;
     frequencyWeekly: string;
     frequencyMonthly: string;
+    reminderTime: string;
     chooseWeekDays: string;
     chooseMonthDays: string;
     createHabit: string;
@@ -36,6 +38,7 @@ interface AddHabitSheetProps<IconName extends string> {
   onChangeMinutes: (value: string) => void;
   onChangeIcon: (value: IconName) => void;
   onChangeFrequency: (value: HabitFrequency) => void;
+  onChangeReminderTime: (value: string) => void;
   onToggleWeekDay: (day: number) => void;
   onToggleMonthDay: (day: number) => void;
   onCreate: () => void;
@@ -51,6 +54,7 @@ export default function AddHabitSheet<IconName extends string>({
   newMinutes,
   newIcon,
   newFrequency,
+  newReminderTime,
   newDaysOfWeek,
   newDaysOfMonth,
   labels,
@@ -59,6 +63,7 @@ export default function AddHabitSheet<IconName extends string>({
   onChangeMinutes,
   onChangeIcon,
   onChangeFrequency,
+  onChangeReminderTime,
   onToggleWeekDay,
   onToggleMonthDay,
   onCreate,
@@ -200,6 +205,19 @@ export default function AddHabitSheet<IconName extends string>({
                 </div>
               </div>
             )}
+
+            <div className="mb-6">
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-gray-500">
+                {labels.reminderTime}
+              </p>
+
+              <input
+                type="time"
+                value={newReminderTime}
+                onChange={(event) => onChangeReminderTime(event.target.value)}
+                className="w-full h-14 px-5 bg-white/5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#7C9EFF] text-[15px]"
+              />
+            </div>
 
             <div className="grid grid-cols-6 gap-3 mb-8">
               {(Object.keys(iconMap) as IconName[]).map((key) => {

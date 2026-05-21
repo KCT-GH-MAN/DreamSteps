@@ -1,4 +1,4 @@
-const CACHE_NAME = "dreamsteps-v1";
+const CACHE_NAME = "dreamsteps-v3";
 
 const APP_SHELL = [
   "/",

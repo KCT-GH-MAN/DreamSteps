@@ -39,7 +39,6 @@ import {
   BatteryLow,
   CloudLightning,
   Trophy,
-  Bell,
 } from "lucide-react";
 
 const ICON_MAP = {
@@ -179,6 +178,7 @@ type Habit = {
   minutes: number;
   completed: boolean;
   frequency: HabitFrequency;
+  reminderTime?: string;
   daysOfWeek?: number[];
   daysOfMonth?: number[];
 };
@@ -308,6 +308,10 @@ function safeParseHabits(value: string | null): Habit[] {
           minutes: Math.max(1, habit.minutes),
           completed: habit.completed,
           frequency,
+          reminderTime:
+            typeof habit.reminderTime === "string" && habit.reminderTime
+              ? habit.reminderTime
+              : undefined,
           daysOfWeek: Array.isArray(habit.daysOfWeek) ? habit.daysOfWeek : [],
           daysOfMonth: Array.isArray(habit.daysOfMonth) ? habit.daysOfMonth : [],
         };
@@ -918,6 +922,45 @@ async function savePushSubscription(subscription: PushSubscription) {
   });
 }
 
+
+async function saveHabitReminder(reminder: {
+  id: number;
+  title: string;
+  minutes: number;
+  reminderTime: string;
+  frequency: HabitFrequency;
+  daysOfWeek?: number[];
+  daysOfMonth?: number[];
+}) {
+  await fetch("/api/reminders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(reminder),
+  });
+}
+
+async function ensurePushReady() {
+  if (typeof window === "undefined" || !("Notification" in window)) return false;
+
+  const permission =
+    Notification.permission === "granted"
+      ? "granted"
+      : await Notification.requestPermission();
+
+  if (permission !== "granted") return false;
+
+  const subscription = await subscribeToPushNotifications();
+
+  if (subscription) {
+    await savePushSubscription(subscription);
+    return true;
+  }
+
+  return false;
+}
+
 async function sendTestPushNotification() {
   await fetch("/api/push", {
     method: "PUT",
@@ -963,6 +1006,7 @@ export default function HomePage() {
   const [newMinutes, setNewMinutes] = useState("10");
   const [newIcon, setNewIcon] = useState<IconName>("BookOpen");
   const [newFrequency, setNewFrequency] = useState<HabitFrequency>("daily");
+  const [newReminderTime, setNewReminderTime] = useState("");
   const [newDaysOfWeek, setNewDaysOfWeek] = useState<number[]>([new Date().getDay()]);
   const [newDaysOfMonth, setNewDaysOfMonth] = useState<number[]>([new Date().getDate()]);
 
@@ -1251,7 +1295,7 @@ export default function HomePage() {
     });
   };
 
-  const addHabit = () => {
+  const addHabit = async () => {
     const title = newTitle.trim();
     if (!title) return;
 
@@ -1267,6 +1311,7 @@ export default function HomePage() {
       minutes,
       completed: false,
       frequency: newFrequency,
+      reminderTime: newReminderTime || undefined,
       daysOfWeek:
         newFrequency === "weekly"
           ? newDaysOfWeek.length > 0
@@ -1286,9 +1331,32 @@ export default function HomePage() {
     setNewMinutes("10");
     setNewIcon("BookOpen");
     setNewFrequency("daily");
+    setNewReminderTime("");
     setNewDaysOfWeek([fallbackWeekDay]);
     setNewDaysOfMonth([fallbackMonthDay]);
     setIsAdding(false);
+
+    if (habit.reminderTime) {
+      try {
+        const ready = await ensurePushReady();
+
+        if (ready) {
+          setNotificationsEnabled(true);
+
+          await saveHabitReminder({
+            id: habit.id,
+            title: habit.title,
+            minutes: habit.minutes,
+            reminderTime: habit.reminderTime,
+            frequency: habit.frequency,
+            daysOfWeek: habit.daysOfWeek,
+            daysOfMonth: habit.daysOfMonth,
+          });
+        }
+      } catch {
+        // Reminder setup should never block habit creation.
+      }
+    }
   };
 
   const deleteHabit = (habitId: number) => {
@@ -1356,29 +1424,15 @@ export default function HomePage() {
   };
 
   const requestNotificationPermission = async () => {
-    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const ready = await ensurePushReady();
 
-    const permission = await Notification.requestPermission();
-
-    if (permission === "granted") {
-      setNotificationsEnabled(true);
-
-      try {
-        const subscription = await subscribeToPushNotifications();
-
-        if (subscription) {
-          await savePushSubscription(subscription);
-          await sendTestPushNotification();
-        } else {
-          new Notification("DreamSteps", {
-            body:
-              language === "vi"
-                ? "Thông báo đã được bật 🌱"
-                : "Notifications enabled 🌱",
-            icon: "/icon.png",
-          });
-        }
-      } catch {
+      if (ready) {
+        setNotificationsEnabled(true);
+        await sendTestPushNotification();
+      }
+    } catch {
+      if (typeof window !== "undefined" && "Notification" in window) {
         new Notification("DreamSteps", {
           body:
             language === "vi"
@@ -1552,64 +1606,6 @@ export default function HomePage() {
                 
               />
 
-              <section
-                className={`mt-5 rounded-[28px] border border-white/5 ${currentTheme.surface} p-5`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-2xl bg-white/5 p-3 text-[#AFC2FF]">
-                      <Bell size={19} />
-                    </div>
-
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">
-                        {language === "vi" ? "Nhắc nhở" : "Reminder"}
-                      </p>
-
-                      <h3 className="mt-1 text-lg font-black leading-tight">
-                        {language === "vi"
-                          ? "Nhắc nhìn lại mỗi ngày"
-                          : "Daily reflection reminder"}
-                      </h3>
-
-                      <p className="mt-1 max-w-[28ch] text-xs leading-relaxed text-gray-500">
-                        {language === "vi"
-                          ? "Đã bật nền tảng thông báo. Bước sau: hẹn giờ tự động."
-                          : "Push foundation enabled. Next: scheduled delivery."}
-                      </p>
-                    </div>
-                  </div>
-
-                  {!notificationsEnabled ? (
-                    <button
-                      type="button"
-                      onClick={requestNotificationPermission}
-                      className="shrink-0 rounded-2xl bg-white px-4 py-2 text-sm font-black text-black"
-                    >
-                      {language === "vi" ? "Bật" : "Enable"}
-                    </button>
-                  ) : (
-                    <span className="shrink-0 rounded-full bg-[#7EE2B8]/10 px-3 py-1 text-xs font-black text-[#7EE2B8]">
-                      ON
-                    </span>
-                  )}
-                </div>
-
-                {notificationsEnabled && (
-                  <div className="mt-4 rounded-2xl bg-white/5 p-3">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                      {language === "vi" ? "Giờ nhắc" : "Reminder time"}
-                    </label>
-
-                    <input
-                      type="time"
-                      value={reminderHour}
-                      onChange={(event) => setReminderHour(event.target.value)}
-                      className="mt-2 w-full rounded-2xl bg-black/10 px-4 py-3 text-white outline-none focus:ring-2 focus:ring-[#7C9EFF]"
-                    />
-                  </div>
-                )}
-              </section>
 
 
               {allTodayHabitsDone && (
@@ -1997,6 +1993,7 @@ export default function HomePage() {
         newMinutes={newMinutes}
         newIcon={newIcon}
         newFrequency={newFrequency}
+        newReminderTime={newReminderTime}
         newDaysOfWeek={newDaysOfWeek}
         newDaysOfMonth={newDaysOfMonth}
         labels={{
@@ -2007,6 +2004,10 @@ export default function HomePage() {
           frequencyDaily: t.habits.daily,
           frequencyWeekly: t.habits.weekly,
           frequencyMonthly: t.habits.monthly,
+          reminderTime:
+            language === "vi"
+              ? "Giờ nhắc (tuỳ chọn)"
+              : "Reminder time (optional)",
           chooseWeekDays: t.addHabit.chooseWeekDays,
           chooseMonthDays: t.addHabit.chooseMonthDays,
           createHabit: t.addHabit.createHabit,
@@ -2017,6 +2018,7 @@ export default function HomePage() {
         onChangeMinutes={setNewMinutes}
         onChangeIcon={setNewIcon}
         onChangeFrequency={setNewFrequency}
+        onChangeReminderTime={setNewReminderTime}
         onToggleWeekDay={toggleWeekDay}
         onToggleMonthDay={toggleMonthDay}
         onCreate={addHabit}
