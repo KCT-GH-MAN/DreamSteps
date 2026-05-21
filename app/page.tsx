@@ -1245,7 +1245,7 @@ export default function HomePage() {
 
   return (
     <main
-  className={`min-h-screen overflow-x-hidden ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
+  className={`min-h-screen ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
 >
   <div className="mx-auto w-full max-w-md md:max-w-2xl pb-32">
         <header className="flex justify-between items-start pt-8">
@@ -1293,12 +1293,12 @@ export default function HomePage() {
           {activeTab === "home" ? (
             <motion.div
               key="home"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.18 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.16 }}
             >
-              <div className={`sticky top-0 z-40 -mx-5 mt-4 ${currentTheme.background} px-5 py-4 transition-colors duration-700`}>
+              <div className={`sticky top-0 z-40 -mx-5 mt-4 ${currentTheme.background} px-5 py-4 transition-colors duration-700 will-change-auto`}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1511,10 +1511,10 @@ export default function HomePage() {
           ) : (
             <motion.section
               key="stats"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.18 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.16 }}
               className="mt-10 space-y-5"
             >
               <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
