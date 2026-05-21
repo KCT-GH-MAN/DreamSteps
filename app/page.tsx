@@ -39,6 +39,7 @@ import {
   BatteryLow,
   CloudLightning,
   Trophy,
+  Bell,
 } from "lucide-react";
 
 const ICON_MAP = {
@@ -875,6 +876,62 @@ function AnimatedCounter({ value }: { value: number }) {
 }
 
 
+const VAPID_PUBLIC_KEY = "BND6RZO20Fba5mhQtqlegRIA3dP_SAInIfdjnX-YpfSVCWNpiK8FzHYx8XYZPitkWxjqrGH0SVV_thdSB4HF9pU";
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; i += 1) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
+async function subscribeToPushNotifications() {
+  if (typeof window === "undefined") return null;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
+
+  const registration = await navigator.serviceWorker.ready;
+  const existingSubscription = await registration.pushManager.getSubscription();
+
+  if (existingSubscription) {
+    return existingSubscription;
+  }
+
+  return registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+  });
+}
+
+async function savePushSubscription(subscription: PushSubscription) {
+  await fetch("/api/push", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(subscription),
+  });
+}
+
+async function sendTestPushNotification() {
+  await fetch("/api/push", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      title: "DreamSteps",
+      body: "Thông báo nền đã sẵn sàng 🌱",
+    }),
+  });
+}
+
+
 export default function HomePage() {
   const { language, setLanguage, toggleLanguage, t } = useLanguage();
   const [mounted, setMounted] = useState(false);
@@ -886,6 +943,9 @@ export default function HomePage() {
   const [selectedHabitTitle, setSelectedHabitTitle] = useState("Focus Session");
   const [selectedSessionType, setSelectedSessionType] = useState<string>("gentle");
   const [showWelcome, setShowWelcome] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [reminderHour, setReminderHour] = useState("21:00");
+  const lastNotificationDateRef = useRef<string | null>(null);
 
   const [habits, setHabits] = useState<Habit[]>([]);
   const [momentum, setMomentum] = useState(0);
@@ -1024,6 +1084,67 @@ export default function HomePage() {
       setShowWelcome(true);
     }
   }, []);
+
+  useEffect(() => {
+    const savedEnabled = localStorage.getItem("ds-notifications-enabled");
+    const savedHour = localStorage.getItem("ds-reminder-hour");
+
+    if (savedEnabled === "true") {
+      setNotificationsEnabled(true);
+    }
+
+    if (savedHour) {
+      setReminderHour(savedHour);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    localStorage.setItem(
+      "ds-notifications-enabled",
+      String(notificationsEnabled)
+    );
+    localStorage.setItem("ds-reminder-hour", reminderHour);
+  }, [notificationsEnabled, reminderHour, mounted]);
+
+  useEffect(() => {
+    if (!mounted || !notificationsEnabled) return;
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+
+    const checkReminder = () => {
+      const now = new Date();
+      const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(
+        now.getMinutes()
+      ).padStart(2, "0")}`;
+      const todayKey = getLocalDateKey(now);
+      const notificationKey = `${todayKey}-${reminderHour}`;
+
+      if (
+        currentTime === reminderHour &&
+        lastNotificationDateRef.current !== notificationKey
+      ) {
+        lastNotificationDateRef.current = notificationKey;
+
+        new Notification("DreamSteps", {
+          body:
+            language === "vi"
+              ? "Nhìn lại hôm nay một chút nhé 🌙"
+              : "Take a moment to reflect 🌙",
+          icon: "/icon.png",
+        });
+      }
+    };
+
+    checkReminder();
+
+    const intervalId = window.setInterval(checkReminder, 60 * 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [mounted, notificationsEnabled, reminderHour, language]);
 
   useEffect(() => {
     setMounted(true);
@@ -1234,6 +1355,41 @@ export default function HomePage() {
     setTimeline(getTimeline());
   };
 
+  const requestNotificationPermission = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+
+    const permission = await Notification.requestPermission();
+
+    if (permission === "granted") {
+      setNotificationsEnabled(true);
+
+      try {
+        const subscription = await subscribeToPushNotifications();
+
+        if (subscription) {
+          await savePushSubscription(subscription);
+          await sendTestPushNotification();
+        } else {
+          new Notification("DreamSteps", {
+            body:
+              language === "vi"
+                ? "Thông báo đã được bật 🌱"
+                : "Notifications enabled 🌱",
+            icon: "/icon.png",
+          });
+        }
+      } catch {
+        new Notification("DreamSteps", {
+          body:
+            language === "vi"
+              ? "Thông báo local đã được bật 🌱"
+              : "Local notifications enabled 🌱",
+          icon: "/icon.png",
+        });
+      }
+    }
+  };
+
   const renderIcon = (iconName: IconName, completed: boolean) => {
     const IconComp = ICON_MAP[iconName] || Star;
     const iconClass = completed ? "text-[#7EE2B8]" : "text-gray-400";
@@ -1396,6 +1552,64 @@ export default function HomePage() {
                 
               />
 
+              <section
+                className={`mt-5 rounded-[28px] border border-white/5 ${currentTheme.surface} p-5`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-2xl bg-white/5 p-3 text-[#AFC2FF]">
+                      <Bell size={19} />
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">
+                        {language === "vi" ? "Nhắc nhở" : "Reminder"}
+                      </p>
+
+                      <h3 className="mt-1 text-lg font-black leading-tight">
+                        {language === "vi"
+                          ? "Nhắc nhìn lại mỗi ngày"
+                          : "Daily reflection reminder"}
+                      </h3>
+
+                      <p className="mt-1 max-w-[28ch] text-xs leading-relaxed text-gray-500">
+                        {language === "vi"
+                          ? "Đã bật nền tảng thông báo. Bước sau: hẹn giờ tự động."
+                          : "Push foundation enabled. Next: scheduled delivery."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {!notificationsEnabled ? (
+                    <button
+                      type="button"
+                      onClick={requestNotificationPermission}
+                      className="shrink-0 rounded-2xl bg-white px-4 py-2 text-sm font-black text-black"
+                    >
+                      {language === "vi" ? "Bật" : "Enable"}
+                    </button>
+                  ) : (
+                    <span className="shrink-0 rounded-full bg-[#7EE2B8]/10 px-3 py-1 text-xs font-black text-[#7EE2B8]">
+                      ON
+                    </span>
+                  )}
+                </div>
+
+                {notificationsEnabled && (
+                  <div className="mt-4 rounded-2xl bg-white/5 p-3">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+                      {language === "vi" ? "Giờ nhắc" : "Reminder time"}
+                    </label>
+
+                    <input
+                      type="time"
+                      value={reminderHour}
+                      onChange={(event) => setReminderHour(event.target.value)}
+                      className="mt-2 w-full rounded-2xl bg-black/10 px-4 py-3 text-white outline-none focus:ring-2 focus:ring-[#7C9EFF]"
+                    />
+                  </div>
+                )}
+              </section>
 
 
               {allTodayHabitsDone && (
