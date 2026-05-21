@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence, animate, useMotionValue, useTransform } from "framer-motion";
 import FocusModal from "@/components/FocusModal";
 import BottomNav from "@/components/BottomNav";
@@ -906,24 +906,61 @@ export default function HomePage() {
   const [newDaysOfWeek, setNewDaysOfWeek] = useState<number[]>([new Date().getDay()]);
   const [newDaysOfMonth, setNewDaysOfMonth] = useState<number[]>([new Date().getDate()]);
 
-  const todayHabits = habits.filter((habit) => isHabitDueToday(habit));
-  const futureHabits = habits.filter((habit) => !isHabitDueToday(habit));
-  const weeklyHeatmap = getLast7DaysAnalytics(analytics);
-  const weeklyStats = getWeeklyStats(analytics);
-  const weekDays = getWeekDays(language);
-  const recoveryMessage = getRecoveryMessage(lastCompletedDate, t);
-    const focusSessions = getFocusSessions(t);
-  const moods = getMoods(t);
-  const suggestedSessionType = getSessionTypeByMood(dailyReflection.mood);
-  const suggestedSession = getFocusSessionById(suggestedSessionType, focusSessions);
-  const allTodayHabitsDone =
-    todayHabits.length > 0 && todayHabits.every((habit) => habit.completed);
-  const showEveningReflection = shouldShowEveningReflection();
-  const latestReflections = getReflections().slice(-5).reverse();
-  const todayTimeline = timeline.filter((entry) => {
-    return getLocalDateKey(new Date(entry.createdAt)) === getTodayStr();
-  });
-  const adaptiveTheme = getThemeByMood(dailyReflection.mood);
+  const todayHabits = useMemo(
+    () => habits.filter((habit) => isHabitDueToday(habit)),
+    [habits]
+  );
+
+  const futureHabits = useMemo(
+    () => habits.filter((habit) => !isHabitDueToday(habit)),
+    [habits]
+  );
+
+  const weeklyHeatmap = useMemo(
+    () => getLast7DaysAnalytics(analytics),
+    [analytics]
+  );
+
+  const weeklyStats = useMemo(
+    () => getWeeklyStats(analytics),
+    [analytics]
+  );
+
+  const weekDays = useMemo(() => getWeekDays(language), [language]);
+  const recoveryMessage = useMemo(
+    () => getRecoveryMessage(lastCompletedDate, t),
+    [lastCompletedDate, t]
+  );
+  const focusSessions = useMemo(() => getFocusSessions(t), [t]);
+  const moods = useMemo(() => getMoods(t), [t]);
+  const suggestedSessionType = useMemo(
+    () => getSessionTypeByMood(dailyReflection.mood),
+    [dailyReflection.mood]
+  );
+  const suggestedSession = useMemo(
+    () => getFocusSessionById(suggestedSessionType, focusSessions),
+    [suggestedSessionType, focusSessions]
+  );
+  const allTodayHabitsDone = useMemo(
+    () => todayHabits.length > 0 && todayHabits.every((habit) => habit.completed),
+    [todayHabits]
+  );
+  const showEveningReflection = useMemo(() => shouldShowEveningReflection(), []);
+  const latestReflections = useMemo(
+    () => getReflections().slice(-5).reverse(),
+    [dailyReflection]
+  );
+  const todayTimeline = useMemo(
+    () =>
+      timeline.filter((entry) => {
+        return getLocalDateKey(new Date(entry.createdAt)) === getTodayStr();
+      }),
+    [timeline]
+  );
+  const adaptiveTheme = useMemo(
+    () => getThemeByMood(dailyReflection.mood),
+    [dailyReflection.mood]
+  );
   const currentTheme = THEMES[adaptiveTheme];
 
   const refreshAppData = useCallback(() => {
@@ -1208,7 +1245,7 @@ export default function HomePage() {
 
   return (
     <main
-  className={`min-h-screen ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
+  className={`min-h-screen overflow-x-hidden ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
 >
   <div className="mx-auto w-full max-w-md md:max-w-2xl pb-32">
         <header className="flex justify-between items-start pt-8">
@@ -1259,7 +1296,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
-              transition={{ type: "spring", stiffness: 180, damping: 20 }}
+              transition={{ duration: 0.18 }}
             >
               <div className={`sticky top-0 z-40 -mx-5 mt-4 ${currentTheme.background} px-5 py-4 transition-colors duration-700`}>
                 <motion.div
@@ -1477,7 +1514,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
-              transition={{ type: "spring", stiffness: 180, damping: 20 }}
+              transition={{ duration: 0.18 }}
               className="mt-10 space-y-5"
             >
               <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
@@ -1609,7 +1646,7 @@ export default function HomePage() {
                   </p>
                 ) : (
                   <div className="mt-5 max-h-[250px] space-y-4 overflow-y-auto hide-scrollbar py-2 pl-2 pr-1">
-                    {todayTimeline.slice(0, 8).map((entry, index) => (
+                    {todayTimeline.slice(0, 5).map((entry, index) => (
                       <motion.div
                         key={entry.id}
                         initial={{ opacity: 0, y: 8 }}
@@ -1630,7 +1667,7 @@ export default function HomePage() {
     <span className="h-2 w-2 rounded-full bg-current" />
   </div>
 
-  {index !== todayTimeline.slice(0, 8).length - 1 && (
+  {index !== todayTimeline.slice(0, 5).length - 1 && (
     <div className="mt-2 h-full min-h-[72px] w-px bg-white/5" />
   )}
 </div>

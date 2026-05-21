@@ -341,12 +341,16 @@ export default function FocusModal({
   }, [open, totalSeconds, autoStart, sessionType]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      audioRef.current?.pause();
+      return;
+    }
 
     document.body.style.overflow = "hidden";
 
     return () => {
       document.body.style.overflow = "";
+      audioRef.current?.pause();
     };
   }, [open]);
 
@@ -463,7 +467,7 @@ export default function FocusModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/95 backdrop-blur-2xl"
+          className="absolute inset-0 bg-black/95 backdrop-blur-md"
           onClick={handleClose}
         />
 
@@ -542,7 +546,7 @@ export default function FocusModal({
                 
               </div>
 
-              <div className={`absolute inset-0 ${currentTheme.glow} blur-[90px] rounded-full -z-10`} />
+              <div className={`absolute inset-0 ${currentTheme.glow} blur-[55px] rounded-full -z-10`} />
             </div>
           </div>
 
@@ -562,7 +566,7 @@ export default function FocusModal({
                   type="button"
                   aria-label={isActive ? "Tạm dừng phiên focus" : "Bắt đầu phiên focus"}
                   onClick={() => setIsActive((prev) => !prev)}
-                  className={`h-20 w-20 rounded-[28px] flex items-center justify-center transition-all shadow-2xl ${
+                  className={`h-20 w-20 rounded-[28px] flex items-center justify-center transition-all shadow-xl ${
                     isActive
                       ? "bg-white text-black scale-95"
                       : "bg-[#7C9EFF] text-white shadow-[#7C9EFF]/30 scale-100"

@@ -1,4 +1,6 @@
 "use client";
+import { memo } from "react";
+
 
 import { Sunrise, Sunset } from "lucide-react";
 
@@ -15,7 +17,7 @@ interface ReflectionCardProps {
   onSecondaryChange?: (value: string) => void;
 }
 
-export default function ReflectionCard({
+function ReflectionCard({
   type,
   title,
   heading,
@@ -71,3 +73,5 @@ export default function ReflectionCard({
     </section>
   );
 }
+
+export default memo(ReflectionCard);

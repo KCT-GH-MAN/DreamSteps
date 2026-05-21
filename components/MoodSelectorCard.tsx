@@ -1,4 +1,6 @@
 "use client";
+import { memo } from "react";
+
 
 import type { LucideIcon } from "lucide-react";
 import { Smile } from "lucide-react";
@@ -19,7 +21,7 @@ interface MoodSelectorCardProps {
   onSelectMood: (mood: MoodState) => void;
 }
 
-export default function MoodSelectorCard({
+function MoodSelectorCard({
   title,
   heading,
   moods,
@@ -77,3 +79,5 @@ export default function MoodSelectorCard({
     </section>
   );
 }
+
+export default memo(MoodSelectorCard);

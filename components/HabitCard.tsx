@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import { memo, ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Check, Trash2 } from "lucide-react";
 
@@ -24,7 +24,7 @@ interface HabitCardProps {
   onStartFocus: () => void;
 }
 
-export default function HabitCard({
+function HabitCard({
   habit,
   icon,
   frequencyLabel,
@@ -120,3 +120,5 @@ export default function HabitCard({
     </motion.div>
   );
 }
+
+export default memo(HabitCard);

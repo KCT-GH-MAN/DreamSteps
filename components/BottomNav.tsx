@@ -1,4 +1,6 @@
 "use client";
+import { memo } from "react";
+
 
 import { BarChart3, House } from "lucide-react";
 
@@ -12,7 +14,7 @@ interface BottomNavProps {
   onChangeTab: (tab: ActiveTab) => void;
 }
 
-export default function BottomNav({
+function BottomNav({
   activeTab,
   surfaceClassName,
   homeLabel,
@@ -22,7 +24,7 @@ export default function BottomNav({
   return (
     <nav
       aria-label="Main navigation"
-      className={`fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[calc(100%-32px)] max-w-md md:max-w-xl -translate-x-1/2 items-center justify-between rounded-[28px] border border-white/5 ${surfaceClassName} p-2 backdrop-blur-xl shadow-2xl`}
+      className={`fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[calc(100%-32px)] max-w-md md:max-w-xl -translate-x-1/2 items-center justify-between rounded-[28px] border border-white/5 ${surfaceClassName} p-2 backdrop-blur-xl shadow-2xl will-change-transform`}
     >
       <button
         type="button"
@@ -52,3 +54,5 @@ export default function BottomNav({
     </nav>
   );
 }
+
+export default memo(BottomNav);

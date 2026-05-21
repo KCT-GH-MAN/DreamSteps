@@ -1,4 +1,6 @@
 "use client";
+import { memo } from "react";
+
 
 import { motion } from "framer-motion";
 
@@ -22,7 +24,7 @@ interface SmartFocusCardProps {
   onStartSuggested: () => void;
 }
 
-export default function SmartFocusCard({
+function SmartFocusCard({
   title,
   suggestedLabel,
   minutesLabel,
@@ -74,3 +76,5 @@ export default function SmartFocusCard({
     </section>
   );
 }
+
+export default memo(SmartFocusCard);
