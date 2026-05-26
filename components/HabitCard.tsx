@@ -10,7 +10,6 @@ interface HabitCardProps {
     title: string;
     minutes: number;
     completed: boolean;
-    reminderTime?: string;
   };
   icon: ReactNode;
   frequencyLabel: string;
@@ -65,14 +64,8 @@ function HabitCard({
             >
               {habit.title}
             </h4>
-            <p className="text-xs text-gray-500 uppercase leading-relaxed">
+            <p className="text-xs text-gray-500 uppercase">
               {habit.minutes} {minutesLabel} · {frequencyLabel}
-
-              {habit.reminderTime && (
-                <span className="block mt-1 text-[#AFC2FF]">
-                  ⏰ {habit.reminderTime}
-                </span>
-              )}
             </p>
           </div>
         </div>

@@ -35,7 +35,6 @@ import {
   CalendarDays,
   BarChart3,
   Sparkles,
-  Zap,
   BatteryLow,
   CloudLightning,
   Trophy,
@@ -178,7 +177,6 @@ type Habit = {
   minutes: number;
   completed: boolean;
   frequency: HabitFrequency;
-  reminderTime?: string;
   daysOfWeek?: number[];
   daysOfMonth?: number[];
 };
@@ -308,10 +306,6 @@ function safeParseHabits(value: string | null): Habit[] {
           minutes: Math.max(1, habit.minutes),
           completed: habit.completed,
           frequency,
-          reminderTime:
-            typeof habit.reminderTime === "string" && habit.reminderTime
-              ? habit.reminderTime
-              : undefined,
           daysOfWeek: Array.isArray(habit.daysOfWeek) ? habit.daysOfWeek : [],
           daysOfMonth: Array.isArray(habit.daysOfMonth) ? habit.daysOfMonth : [],
         };
@@ -692,50 +686,6 @@ function getMoodMessage(
   return t.moods.defaultMessage;
 }
 
-function getSuggestedFocusByMood(
-  mood: MoodState | null,
-  t: ReturnType<typeof useLanguage>["t"]
-) {
-  if (mood === "tired") {
-    return {
-      minutes: 5,
-      title: t.focusSessions.recoveryTitle,
-      label: t.focusSessions.recoveryLabel,
-    };
-  }
-
-  if (mood === "distracted") {
-    return {
-      minutes: 2,
-      title: t.focusSessions.tinyTitle,
-      label: t.focusSessions.tinyLabel,
-    };
-  }
-
-  if (mood === "focused") {
-    return {
-      minutes: 25,
-      title: t.focusSessions.deepTitle,
-      label: t.focusSessions.deepLabel,
-    };
-  }
-
-  if (mood === "motivated") {
-    return {
-      minutes: 45,
-      title: t.focusSessions.momentumTitle,
-      label: t.focusSessions.momentumLabel,
-    };
-  }
-
-  return {
-    minutes: 10,
-    title: t.focusSessions.gentleTitle,
-    label: t.focusSessions.gentleLabel,
-  };
-}
-
-
 function getFocusSessionById(id: string, sessions: FocusSessionType[]) {
   return sessions.find((session) => session.id === id) ?? sessions[2];
 }
@@ -880,101 +830,6 @@ function AnimatedCounter({ value }: { value: number }) {
 }
 
 
-const VAPID_PUBLIC_KEY = "BND6RZO20Fba5mhQtqlegRIA3dP_SAInIfdjnX-YpfSVCWNpiK8FzHYx8XYZPitkWxjqrGH0SVV_thdSB4HF9pU";
-
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; i += 1) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-
-  return outputArray;
-}
-
-async function subscribeToPushNotifications() {
-  if (typeof window === "undefined") return null;
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
-
-  const registration = await navigator.serviceWorker.ready;
-  const existingSubscription = await registration.pushManager.getSubscription();
-
-  if (existingSubscription) {
-    return existingSubscription;
-  }
-
-  return registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-  });
-}
-
-async function savePushSubscription(subscription: PushSubscription) {
-  await fetch("/api/push", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(subscription),
-  });
-}
-
-
-async function saveHabitReminder(reminder: {
-  id: number;
-  title: string;
-  minutes: number;
-  reminderTime: string;
-  frequency: HabitFrequency;
-  daysOfWeek?: number[];
-  daysOfMonth?: number[];
-}) {
-  await fetch("/api/reminders", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(reminder),
-  });
-}
-
-async function ensurePushReady() {
-  if (typeof window === "undefined" || !("Notification" in window)) return false;
-
-  const permission =
-    Notification.permission === "granted"
-      ? "granted"
-      : await Notification.requestPermission();
-
-  if (permission !== "granted") return false;
-
-  const subscription = await subscribeToPushNotifications();
-
-  if (subscription) {
-    await savePushSubscription(subscription);
-    return true;
-  }
-
-  return false;
-}
-
-async function sendTestPushNotification() {
-  await fetch("/api/push", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      title: "DreamSteps",
-      body: "Thông báo nền đã sẵn sàng 🌱",
-    }),
-  });
-}
-
-
 export default function HomePage() {
   const { language, setLanguage, toggleLanguage, t } = useLanguage();
   const [mounted, setMounted] = useState(false);
@@ -986,9 +841,6 @@ export default function HomePage() {
   const [selectedHabitTitle, setSelectedHabitTitle] = useState("Focus Session");
   const [selectedSessionType, setSelectedSessionType] = useState<string>("gentle");
   const [showWelcome, setShowWelcome] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [reminderHour, setReminderHour] = useState("21:00");
-  const lastNotificationDateRef = useRef<string | null>(null);
 
   const [habits, setHabits] = useState<Habit[]>([]);
   const [momentum, setMomentum] = useState(0);
@@ -1006,7 +858,6 @@ export default function HomePage() {
   const [newMinutes, setNewMinutes] = useState("10");
   const [newIcon, setNewIcon] = useState<IconName>("BookOpen");
   const [newFrequency, setNewFrequency] = useState<HabitFrequency>("daily");
-  const [newReminderTime, setNewReminderTime] = useState("");
   const [newDaysOfWeek, setNewDaysOfWeek] = useState<number[]>([new Date().getDay()]);
   const [newDaysOfMonth, setNewDaysOfMonth] = useState<number[]>([new Date().getDate()]);
 
@@ -1130,67 +981,6 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const savedEnabled = localStorage.getItem("ds-notifications-enabled");
-    const savedHour = localStorage.getItem("ds-reminder-hour");
-
-    if (savedEnabled === "true") {
-      setNotificationsEnabled(true);
-    }
-
-    if (savedHour) {
-      setReminderHour(savedHour);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    localStorage.setItem(
-      "ds-notifications-enabled",
-      String(notificationsEnabled)
-    );
-    localStorage.setItem("ds-reminder-hour", reminderHour);
-  }, [notificationsEnabled, reminderHour, mounted]);
-
-  useEffect(() => {
-    if (!mounted || !notificationsEnabled) return;
-    if (typeof window === "undefined" || !("Notification" in window)) return;
-    if (Notification.permission !== "granted") return;
-
-    const checkReminder = () => {
-      const now = new Date();
-      const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(
-        now.getMinutes()
-      ).padStart(2, "0")}`;
-      const todayKey = getLocalDateKey(now);
-      const notificationKey = `${todayKey}-${reminderHour}`;
-
-      if (
-        currentTime === reminderHour &&
-        lastNotificationDateRef.current !== notificationKey
-      ) {
-        lastNotificationDateRef.current = notificationKey;
-
-        new Notification("DreamSteps", {
-          body:
-            language === "vi"
-              ? "Nhìn lại hôm nay một chút nhé 🌙"
-              : "Take a moment to reflect 🌙",
-          icon: "/icon.png",
-        });
-      }
-    };
-
-    checkReminder();
-
-    const intervalId = window.setInterval(checkReminder, 60 * 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [mounted, notificationsEnabled, reminderHour, language]);
-
-  useEffect(() => {
     setMounted(true);
     refreshAppData();
 
@@ -1295,7 +1085,7 @@ export default function HomePage() {
     });
   };
 
-  const addHabit = async () => {
+  const addHabit = () => {
     const title = newTitle.trim();
     if (!title) return;
 
@@ -1311,7 +1101,6 @@ export default function HomePage() {
       minutes,
       completed: false,
       frequency: newFrequency,
-      reminderTime: newReminderTime || undefined,
       daysOfWeek:
         newFrequency === "weekly"
           ? newDaysOfWeek.length > 0
@@ -1331,32 +1120,9 @@ export default function HomePage() {
     setNewMinutes("10");
     setNewIcon("BookOpen");
     setNewFrequency("daily");
-    setNewReminderTime("");
     setNewDaysOfWeek([fallbackWeekDay]);
     setNewDaysOfMonth([fallbackMonthDay]);
     setIsAdding(false);
-
-    if (habit.reminderTime) {
-      try {
-        const ready = await ensurePushReady();
-
-        if (ready) {
-          setNotificationsEnabled(true);
-
-          await saveHabitReminder({
-            id: habit.id,
-            title: habit.title,
-            minutes: habit.minutes,
-            reminderTime: habit.reminderTime,
-            frequency: habit.frequency,
-            daysOfWeek: habit.daysOfWeek,
-            daysOfMonth: habit.daysOfMonth,
-          });
-        }
-      } catch {
-        // Reminder setup should never block habit creation.
-      }
-    }
   };
 
   const deleteHabit = (habitId: number) => {
@@ -1421,27 +1187,6 @@ export default function HomePage() {
     trackFocusOnly(minutes);
     setAnalytics(getAnalytics());
     setTimeline(getTimeline());
-  };
-
-  const requestNotificationPermission = async () => {
-    try {
-      const ready = await ensurePushReady();
-
-      if (ready) {
-        setNotificationsEnabled(true);
-        await sendTestPushNotification();
-      }
-    } catch {
-      if (typeof window !== "undefined" && "Notification" in window) {
-        new Notification("DreamSteps", {
-          body:
-            language === "vi"
-              ? "Thông báo local đã được bật 🌱"
-              : "Local notifications enabled 🌱",
-          icon: "/icon.png",
-        });
-      }
-    }
   };
 
   const renderIcon = (iconName: IconName, completed: boolean) => {
@@ -1993,7 +1738,6 @@ export default function HomePage() {
         newMinutes={newMinutes}
         newIcon={newIcon}
         newFrequency={newFrequency}
-        newReminderTime={newReminderTime}
         newDaysOfWeek={newDaysOfWeek}
         newDaysOfMonth={newDaysOfMonth}
         labels={{
@@ -2004,10 +1748,6 @@ export default function HomePage() {
           frequencyDaily: t.habits.daily,
           frequencyWeekly: t.habits.weekly,
           frequencyMonthly: t.habits.monthly,
-          reminderTime:
-            language === "vi"
-              ? "Giờ nhắc (tuỳ chọn)"
-              : "Reminder time (optional)",
           chooseWeekDays: t.addHabit.chooseWeekDays,
           chooseMonthDays: t.addHabit.chooseMonthDays,
           createHabit: t.addHabit.createHabit,
@@ -2018,7 +1758,6 @@ export default function HomePage() {
         onChangeMinutes={setNewMinutes}
         onChangeIcon={setNewIcon}
         onChangeFrequency={setNewFrequency}
-        onChangeReminderTime={setNewReminderTime}
         onToggleWeekDay={toggleWeekDay}
         onToggleMonthDay={toggleMonthDay}
         onCreate={addHabit}
