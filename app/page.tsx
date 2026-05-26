@@ -711,36 +711,6 @@ function shouldShowEveningReflection() {
 
 
 
-function getTimelineDisplayEntry(
-  entry: TimelineEntry,
-  t: ReturnType<typeof useLanguage>["t"]
-) {
-  let title = entry.title;
-  let subtitle = entry.subtitle;
-
-  if (title.startsWith("Completed ")) {
-    title = `${t.habits.completedHabit} ${title.replace("Completed ", "")}`;
-  }
-
-  if (subtitle?.endsWith(" minutes")) {
-    subtitle = subtitle.replace(" minutes", ` ${t.habits.completedSubtitle}`);
-  }
-
-  if (title === "Updated evening reflection") {
-    title = t.reflection.updatedEveningReflection;
-  }
-
-  if (title === "Updated morning intent") {
-    title = t.reflection.updatedMorningIntent;
-  }
-
-  return {
-    ...entry,
-    title,
-    subtitle,
-  };
-}
-
 function AnimatedFlame() {
   return (
     <motion.div
@@ -902,8 +872,8 @@ export default function HomePage() {
   );
   const showEveningReflection = useMemo(() => shouldShowEveningReflection(), []);
   const latestReflections = useMemo(
-    () => getReflections().slice(-5).reverse(),
-    [dailyReflection]
+    () => (mounted ? getReflections().slice(-5).reverse() : []),
+    [mounted, dailyReflection]
   );
   const todayTimeline = useMemo(
     () =>
