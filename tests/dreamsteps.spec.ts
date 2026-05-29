@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
+  await page.clock.setFixedTime(new Date("2026-05-29T19:30:00"));
   await page.addInitScript(() => {
     window.localStorage.setItem("ds-welcome-seen", "true");
   });
