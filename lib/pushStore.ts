@@ -26,6 +26,10 @@ const STORE_DIR = path.join(process.cwd(), ".dreamsteps");
 const STORE_PATH = path.join(STORE_DIR, "push-subscriptions.json");
 const SUPABASE_TABLE = "push_subscriptions";
 
+function normalizeSupabaseUrl(url: string) {
+  return url.replace(/\/rest\/v1\/?$/, "").replace(/\/$/, "");
+}
+
 function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -33,7 +37,7 @@ function getSupabaseConfig() {
   if (!url || !serviceRoleKey) return null;
 
   return {
-    restUrl: `${url.replace(/\/$/, "")}/rest/v1/${SUPABASE_TABLE}`,
+    restUrl: `${normalizeSupabaseUrl(url)}/rest/v1/${SUPABASE_TABLE}`,
     serviceRoleKey,
   };
 }
