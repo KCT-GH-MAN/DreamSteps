@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { listSubscriptions } from "@/lib/pushStore";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const checks = {
@@ -26,10 +27,17 @@ export async function GET() {
     storeError = error instanceof Error ? error.message : "Unknown push store error";
   }
 
-  return NextResponse.json({
-    ok: requiredEnvOk && !storeError,
-    checks,
-    subscriptionCount,
-    storeError,
-  });
+  return NextResponse.json(
+    {
+      ok: requiredEnvOk && !storeError,
+      checks,
+      subscriptionCount,
+      storeError,
+    },
+    {
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    }
+  );
 }

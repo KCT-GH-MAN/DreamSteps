@@ -3,6 +3,7 @@ import { listSubscriptions, markSubscriptionSent, removeSubscription } from "@/l
 import { configureWebPush } from "@/lib/pushServer";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function getLocalDateParts(timezone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -76,7 +77,14 @@ async function handleReminderRun() {
 async function runReminderRequest() {
   try {
     const sent = await handleReminderRun();
-    return NextResponse.json({ ok: true, sent });
+    return NextResponse.json(
+      { ok: true, sent },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown reminder error";
 
@@ -85,7 +93,12 @@ async function runReminderRequest() {
         ok: false,
         error: message,
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
     );
   }
 }
