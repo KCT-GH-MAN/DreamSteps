@@ -9,6 +9,8 @@ import { configureWebPush } from "@/lib/pushServer";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const SCHEDULED_REMINDER_GRACE_MINUTES = 30;
+
 function getLocalDateParts(timezone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
@@ -46,6 +48,25 @@ function getDaysBetween(startDate: string, endDate: string) {
   if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
 
   return Math.floor((end - start) / 86_400_000);
+}
+
+function timeToMinutes(value: string) {
+  const [hour, minute] = value.split(":").map(Number);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+
+  return hour * 60 + minute;
+}
+
+function isWithinScheduledReminderWindow(currentTime: string, scheduledTime: string) {
+  const currentMinutes = timeToMinutes(currentTime);
+  const scheduledMinutes = timeToMinutes(scheduledTime);
+
+  if (currentMinutes === null || scheduledMinutes === null) return false;
+
+  const elapsedMinutes = currentMinutes - scheduledMinutes;
+
+  return elapsedMinutes >= 0 && elapsedMinutes <= SCHEDULED_REMINDER_GRACE_MINUTES;
 }
 
 function getPayload(language: "vi" | "en", type: "morning" | "evening" | "reengage") {
@@ -89,14 +110,14 @@ async function handleReminderRun() {
 
       if (
         item.lastMorningSentDate !== local.date &&
-        local.time >= item.morningReminderTime
+        isWithinScheduledReminderWindow(local.time, item.morningReminderTime)
       ) {
         dueNotifications.push("morning");
       }
 
       if (
         item.lastEveningSentDate !== local.date &&
-        local.time >= item.eveningReflectionTime
+        isWithinScheduledReminderWindow(local.time, item.eveningReflectionTime)
       ) {
         dueNotifications.push("evening");
       }
