@@ -2,13 +2,11 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence, animate, useMotionValue, useTransform } from "framer-motion";
-import FocusModal from "@/components/FocusModal";
 import BottomNav from "@/components/BottomNav";
 import HabitCard from "@/components/HabitCard";
 import SmartFocusCard from "@/components/SmartFocusCard";
-import AddHabitSheet from "@/components/AddHabitSheet";
-import HabitDetailSheet from "@/components/HabitDetailSheet";
 import ReflectionCard from "@/components/ReflectionCard";
 import MoodSelectorCard from "@/components/MoodSelectorCard";
 import { useLanguage } from "@/lib/useLanguage";
@@ -46,6 +44,19 @@ import {
   DatabaseBackup,
   Bell,
 } from "lucide-react";
+
+const AddHabitSheet = dynamic(() => import("@/components/AddHabitSheet"), {
+  ssr: false,
+  loading: () => null,
+});
+const FocusModal = dynamic(() => import("@/components/FocusModal"), {
+  ssr: false,
+  loading: () => null,
+});
+const HabitDetailSheet = dynamic(() => import("@/components/HabitDetailSheet"), {
+  ssr: false,
+  loading: () => null,
+});
 
 const ICON_MAP = {
   BookOpen,
@@ -1279,7 +1290,16 @@ export default function HomePage() {
     [todayHabits]
   );
   const showEveningReflection = useMemo(() => shouldShowEveningReflection(), []);
-  const latestReflections = mounted ? getReflections().slice(-5).reverse() : [];
+  const completedTodayCount = useMemo(
+    () => todayHabits.reduce((count, habit) => count + (habit.completed ? 1 : 0), 0),
+    [todayHabits]
+  );
+  const latestReflections = useMemo(() => {
+    if (!mounted) return [];
+
+    void dailyReflection;
+    return getReflections().slice(-5).reverse();
+  }, [mounted, dailyReflection]);
   const todayTimeline = useMemo(
     () =>
       timeline.filter((entry) => {
@@ -1982,7 +2002,7 @@ export default function HomePage() {
     <main
   className={`min-h-screen ${currentTheme.background} px-3 py-3 text-white transition-colors duration-700 sm:p-5 font-sans`}
 >
-  <div className="mx-auto w-full max-w-md pb-[calc(9rem+env(safe-area-inset-bottom))] md:max-w-2xl">
+      <div className="mx-auto w-full max-w-md pb-[calc(9rem+env(safe-area-inset-bottom))] md:max-w-2xl">
         <header className="flex items-start justify-between pt-4 sm:pt-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             {activeTab === "home" && (
@@ -2150,7 +2170,7 @@ export default function HomePage() {
                 <div className="mb-4 flex items-center justify-between sm:mb-6">
                   <h3 className="text-xl font-black">{t.habits.today}</h3>
                   <div className="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-gray-500">
-                    {todayHabits.filter((habit) => habit.completed).length}/{todayHabits.length}
+                    {completedTodayCount}/{todayHabits.length}
                   </div>
                 </div>
 
@@ -2280,7 +2300,7 @@ export default function HomePage() {
               transition={{ duration: 0.16 }}
               className="mt-10 flex flex-col gap-5"
             >
-              <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
+              <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]`}>
                 <div className="mb-6 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
@@ -2331,7 +2351,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
+              <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]`}>
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl bg-white/5 p-3 text-[#7EE2B8]">
                     <Sparkles size={20} />
@@ -2782,44 +2802,46 @@ export default function HomePage() {
         />
       )}
 
-      <AddHabitSheet
-        open={isAdding}
-        surfaceClassName={currentTheme.surface}
-        iconMap={ICON_MAP}
-        weekDays={weekDays}
-        monthDays={MONTH_DAYS}
-        newTitle={newTitle}
-        newMinutes={newMinutes}
-        newIcon={newIcon}
-        newFrequency={newFrequency}
-        newDaysOfWeek={newDaysOfWeek}
-        newDaysOfMonth={newDaysOfMonth}
-        labels={{
-          create: t.addHabit.create,
-          newHabit: t.addHabit.newHabit,
-          edit: t.addHabit.edit,
-          editHabit: t.addHabit.editHabit,
-          titlePlaceholder: t.addHabit.titlePlaceholder,
-          minutesPlaceholder: t.addHabit.minutesPlaceholder,
-          frequencyDaily: t.habits.daily,
-          frequencyWeekly: t.habits.weekly,
-          frequencyMonthly: t.habits.monthly,
-          chooseWeekDays: t.addHabit.chooseWeekDays,
-          chooseMonthDays: t.addHabit.chooseMonthDays,
-          createHabit: t.addHabit.createHabit,
-          saveHabit: t.addHabit.saveHabit,
-          closeForm: t.addHabit.closeForm,
-        }}
-        isEditing={editingHabitId !== null}
-        onClose={closeHabitSheet}
-        onChangeTitle={setNewTitle}
-        onChangeMinutes={setNewMinutes}
-        onChangeIcon={setNewIcon}
-        onChangeFrequency={setNewFrequency}
-        onToggleWeekDay={toggleWeekDay}
-        onToggleMonthDay={toggleMonthDay}
-        onSubmit={saveHabit}
-      />
+      {isAdding && (
+        <AddHabitSheet
+          open={isAdding}
+          surfaceClassName={currentTheme.surface}
+          iconMap={ICON_MAP}
+          weekDays={weekDays}
+          monthDays={MONTH_DAYS}
+          newTitle={newTitle}
+          newMinutes={newMinutes}
+          newIcon={newIcon}
+          newFrequency={newFrequency}
+          newDaysOfWeek={newDaysOfWeek}
+          newDaysOfMonth={newDaysOfMonth}
+          labels={{
+            create: t.addHabit.create,
+            newHabit: t.addHabit.newHabit,
+            edit: t.addHabit.edit,
+            editHabit: t.addHabit.editHabit,
+            titlePlaceholder: t.addHabit.titlePlaceholder,
+            minutesPlaceholder: t.addHabit.minutesPlaceholder,
+            frequencyDaily: t.habits.daily,
+            frequencyWeekly: t.habits.weekly,
+            frequencyMonthly: t.habits.monthly,
+            chooseWeekDays: t.addHabit.chooseWeekDays,
+            chooseMonthDays: t.addHabit.chooseMonthDays,
+            createHabit: t.addHabit.createHabit,
+            saveHabit: t.addHabit.saveHabit,
+            closeForm: t.addHabit.closeForm,
+          }}
+          isEditing={editingHabitId !== null}
+          onClose={closeHabitSheet}
+          onChangeTitle={setNewTitle}
+          onChangeMinutes={setNewMinutes}
+          onChangeIcon={(value) => setNewIcon(value as IconName)}
+          onChangeFrequency={setNewFrequency}
+          onToggleWeekDay={toggleWeekDay}
+          onToggleMonthDay={toggleMonthDay}
+          onSubmit={saveHabit}
+        />
+      )}
 
 
       <AnimatePresence>
@@ -2976,19 +2998,21 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <FocusModal
-        open={openFocus}
-        minutes={selectedMinutes}
-        title={selectedHabitTitle}
-        onComplete={handleFocusComplete}
-        sessionType={selectedSessionType}
-        testDurationSeconds={testFocusDurationSeconds}
-        onClose={() => {
-          setOpenFocus(false);
-          setSelectedHabitFocusId(null);
-        }}
-        language={language}
-      />
+      {openFocus && (
+        <FocusModal
+          open={openFocus}
+          minutes={selectedMinutes}
+          title={selectedHabitTitle}
+          onComplete={handleFocusComplete}
+          sessionType={selectedSessionType}
+          testDurationSeconds={testFocusDurationSeconds}
+          onClose={() => {
+            setOpenFocus(false);
+            setSelectedHabitFocusId(null);
+          }}
+          language={language}
+        />
+      )}
     </main>
   );
 }
