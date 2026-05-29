@@ -32,23 +32,23 @@ function MoodSelectorCard({
 }: MoodSelectorCardProps) {
   return (
     <section
-      className={`mt-5 rounded-[32px] border border-white/5 ${surfaceClassName} p-5 sm:p-6`}
+      className={`mt-5 rounded-[28px] border border-white/5 ${surfaceClassName} p-4 sm:rounded-[32px] sm:p-6`}
     >
       <div className="flex items-start gap-3">
-        <div className="rounded-2xl bg-white/5 p-3 text-[#7EE2B8]">
-          <Smile size={20} />
+        <div className="rounded-2xl bg-white/5 p-2.5 text-[#7EE2B8] sm:p-3">
+          <Smile size={18} className="sm:size-5" />
         </div>
 
         <div className="flex-1">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 sm:text-xs">
             {title}
           </p>
 
-          <h3 className="mt-2 text-xl sm:text-2xl font-black leading-tight">
+          <h3 className="mt-2 text-lg font-black leading-tight sm:text-2xl">
             {heading}
           </h3>
 
-          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
             {moods.map((mood) => {
               const Icon = mood.icon;
               const active = selectedMood === mood.value;
@@ -58,7 +58,7 @@ function MoodSelectorCard({
                   key={mood.value}
                   type="button"
                   onClick={() => onSelectMood(mood.value)}
-                  className={`flex items-center gap-2 rounded-2xl border p-3 text-left text-xs font-black transition-all ${
+                  className={`flex min-h-11 items-center gap-2 rounded-2xl border px-3 py-2.5 text-left text-xs font-black leading-snug transition-all ${
                     active
                       ? "border-[#7C9EFF] bg-[#7C9EFF]/20 text-white"
                       : "border-white/5 bg-white/5 text-gray-500 hover:text-white"

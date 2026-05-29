@@ -467,7 +467,7 @@ export default function FocusModal({
 
   return (
     <AnimatePresence mode="wait">
-      <div key="focus-modal-root" className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+      <div key="focus-modal-root" className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -482,26 +482,26 @@ export default function FocusModal({
           exit={{ scale: 0.85, opacity: 0, y: 20 }}
           className={`relative ${APP_THEMES[appTheme as keyof typeof APP_THEMES]?.card || "bg-[#171A21]"} w-full ${
   deepFocus ? "max-w-2xl" : "max-w-sm md:max-w-lg"
-} max-h-[calc(100dvh-16px)] overflow-hidden rounded-[34px] sm:rounded-[40px] p-4 sm:p-6 md:p-8 border border-white/10 text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)]`}
+} max-h-[calc(100dvh-24px)] overflow-y-auto rounded-[30px] border border-white/10 p-4 text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)] sm:rounded-[40px] sm:p-6 md:p-8`}
         >
           {!showCompliment && (
-            <div className="absolute top-8 right-8 z-10 flex gap-2">
+            <div className="absolute right-5 top-5 z-10 flex gap-2 sm:right-8 sm:top-8">
               <button
                 type="button"
                 aria-label={deepFocus ? text.deepFocusOff : text.deepFocusOn}
                 onClick={() => setDeepFocus((prev) => !prev)}
-                className="text-gray-600 hover:text-white transition-colors"
+                className="p-1 text-gray-600 transition-colors hover:text-white"
               >
-                {deepFocus ? <Maximize2 size={24} /> : <Minimize2 size={24} />}
+                {deepFocus ? <Maximize2 size={22} /> : <Minimize2 size={22} />}
               </button>
 
               <button
                 type="button"
                 aria-label={text.close}
                 onClick={handleClose}
-                className="text-gray-600 hover:text-white transition-colors"
+                className="p-1 text-gray-600 transition-colors hover:text-white"
               >
-                <X size={28} />
+                <X size={25} />
               </button>
             </div>
           )}
@@ -515,8 +515,8 @@ export default function FocusModal({
             {title === "Tiny Start" ? localizedSessionLabel : title || localizedSessionLabel}
           </span>
 
-          <div className="relative my-7 sm:my-9 flex justify-center">
-            <div className="relative flex h-[220px] w-[220px] sm:h-[236px] sm:w-[236px] items-center justify-center">
+          <div className="relative my-6 flex justify-center sm:my-9">
+            <div className="relative flex h-[min(52vw,210px)] w-[min(52vw,210px)] items-center justify-center sm:h-[236px] sm:w-[236px]">
               <svg
                 viewBox="0 0 260 260"
                 className="absolute inset-0 h-full w-full -rotate-90"
@@ -544,7 +544,7 @@ export default function FocusModal({
               </svg>
 
               <div className="relative z-10 flex max-w-[210px] flex-col items-center justify-center text-center">
-                <div className="max-w-full whitespace-nowrap text-[48px] sm:text-[56px] font-black italic tracking-[-0.08em] text-white leading-tight tabular-nums px-2">
+                <div className="max-w-full whitespace-nowrap px-2 text-[44px] font-black italic leading-tight tracking-[-0.08em] text-white tabular-nums sm:text-[56px]">
                   {formatTime(timeLeft)}
                 </div>
 
@@ -557,30 +557,30 @@ export default function FocusModal({
 
           {!showCompliment && (
             <>
-              <div className="flex items-center justify-center gap-6">
+              <div className="flex items-center justify-center gap-5 sm:gap-6">
                 <button
                   type="button"
                   aria-label="Reset phiên focus"
                   onClick={resetSession}
-                  className="h-12 w-12 rounded-2xl bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center"
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/5 text-gray-500 transition-all hover:bg-white/10 hover:text-white sm:h-12 sm:w-12"
                 >
-                  <RotateCcw size={24} />
+                  <RotateCcw size={22} />
                 </button>
 
                 <button
                   type="button"
                   aria-label={isActive ? "Tạm dừng phiên focus" : "Bắt đầu phiên focus"}
                   onClick={() => setIsActive((prev) => !prev)}
-                  className={`h-20 w-20 rounded-[28px] flex items-center justify-center transition-all shadow-xl ${
+                  className={`flex h-16 w-16 items-center justify-center rounded-[24px] transition-all shadow-xl sm:h-20 sm:w-20 sm:rounded-[28px] ${
                     isActive
                       ? "bg-white text-black scale-95"
                       : "bg-[#7C9EFF] text-white shadow-[#7C9EFF]/30 scale-100"
                   }`}
                 >
                   {isActive ? (
-                    <Pause size={34} fill="currentColor" />
+                    <Pause size={30} fill="currentColor" />
                   ) : (
-                    <Play size={34} fill="currentColor" className="ml-1.5" />
+                    <Play size={30} fill="currentColor" className="ml-1.5" />
                   )}
                 </button>
 
@@ -614,7 +614,7 @@ export default function FocusModal({
                 </button>
               </div>
 
-              <div className="flex items-center justify-center gap-3 flex-wrap">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
                 {AMBIENT_SOUNDS.map((sound) => {
                   const Icon = sound.icon;
                   const active = selectedSound === sound.id;
@@ -628,7 +628,7 @@ export default function FocusModal({
     setSelectedSound(sound.id);
     setSoundEnabled(true);
   }}
-  className={`h-12 w-12 rounded-2xl border flex items-center justify-center transition-all ${
+  className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border transition-all ${
     active
       ? "border-[#7C9EFF] bg-[#7C9EFF]/20 text-white"
       : "border-white/5 bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white"

@@ -45,7 +45,7 @@ function SmartFocusCard({
         whileTap={{ scale: 0.98 }}
         type="button"
         onClick={onStartSuggested}
-        className={`w-full rounded-[26px] border ${accentBorderClassName} ${accentBgClassName} p-4 text-left shadow-[0_0_30px_rgba(124,158,255,0.1)] transition-all duration-700 sm:rounded-[30px] sm:p-5`}
+        className={`w-full rounded-[24px] border ${accentBorderClassName} ${accentBgClassName} p-4 text-left shadow-[0_0_30px_rgba(124,158,255,0.1)] transition-all duration-700 sm:rounded-[30px] sm:p-5`}
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -55,11 +55,11 @@ function SmartFocusCard({
               {suggestedLabel}
             </p>
 
-            <h3 className="mt-2 text-lg font-black leading-tight sm:text-xl">
+            <h3 className="mt-2 text-base font-black leading-tight sm:text-xl">
               {suggestedSession.title}
             </h3>
 
-            <p className="mt-1 max-w-[32ch] text-sm leading-relaxed text-gray-400 text-pretty">
+            <p className="mt-1 max-w-[32ch] text-xs leading-relaxed text-gray-400 text-pretty sm:text-sm">
               {suggestedSession.description}
             </p>
           </div>

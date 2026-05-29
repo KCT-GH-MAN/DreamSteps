@@ -2002,7 +2002,7 @@ export default function HomePage() {
     <main
   className={`min-h-screen ${currentTheme.background} px-3 py-3 text-white transition-colors duration-700 sm:p-5 font-sans`}
 >
-      <div className="mx-auto w-full max-w-md pb-[calc(9rem+env(safe-area-inset-bottom))] md:max-w-2xl">
+      <div className="mx-auto w-full max-w-md pb-[calc(9rem+env(safe-area-inset-bottom))] md:max-w-xl lg:max-w-2xl">
         <header className="flex items-start justify-between pt-4 sm:pt-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             {activeTab === "home" && (
@@ -2028,6 +2028,7 @@ export default function HomePage() {
                 alt="language"
                 width={24}
                 height={16}
+                priority
                 className="h-4 w-6 object-cover drop-shadow-[0_0_6px_rgba(255,255,255,0.15)]"
               />
             </button>
@@ -2059,10 +2060,10 @@ export default function HomePage() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex items-center justify-between rounded-[28px] bg-gradient-to-br ${currentTheme.primaryGradient} p-5 ${currentTheme.primaryShadow} transition-all duration-700 sm:rounded-[35px] sm:p-8`}
+                  className={`flex items-center justify-between rounded-[26px] bg-gradient-to-br ${currentTheme.primaryGradient} p-4 ${currentTheme.primaryShadow} transition-all duration-700 sm:rounded-[35px] sm:p-8`}
                 >
                 <div>
-                  <h2 className="text-4xl font-black italic tracking-tighter sm:text-5xl">
+                  <h2 className="text-[34px] font-black italic tracking-tighter sm:text-5xl">
                     <AnimatedCounter value={momentum} />
                     <span className="ml-2 text-base font-medium opacity-80 sm:text-lg">{t.common.shortMinutes}</span>
                   </h2>
@@ -2078,7 +2079,7 @@ export default function HomePage() {
                   </motion.div>
                 </div>
 
-                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-white/20 sm:h-16 sm:w-16 sm:rounded-[22px]">
+                <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[19px] bg-white/20 sm:h-16 sm:w-16 sm:rounded-[22px]">
                   <motion.div
                     animate={{
                       opacity: [0.2, 0.45, 0.2],

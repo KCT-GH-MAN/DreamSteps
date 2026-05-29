@@ -35,19 +35,19 @@ function ReflectionCard({
     <section
       className={`${
         type === "morning" ? "mt-6" : "mt-10"
-      } rounded-[32px] border border-white/5 ${surfaceClassName} p-5 sm:p-6`}
+      } rounded-[28px] border border-white/5 ${surfaceClassName} p-4 sm:rounded-[32px] sm:p-6`}
     >
       <div className="flex items-start gap-3">
-        <div className="rounded-2xl bg-white/5 p-3 text-[#FFD166]">
-          <Icon size={20} />
+        <div className="rounded-2xl bg-white/5 p-2.5 text-[#FFD166] sm:p-3">
+          <Icon size={18} className="sm:size-5" />
         </div>
 
         <div className="flex-1">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 sm:text-xs">
             {title}
           </p>
 
-          <h3 className="mt-2 text-xl sm:text-2xl font-black leading-tight">
+          <h3 className="mt-2 text-lg font-black leading-tight sm:text-2xl">
             {heading}
           </h3>
 
@@ -55,7 +55,7 @@ function ReflectionCard({
             value={value}
             onChange={(event) => onChange(event.target.value)}
             placeholder={placeholder}
-            className="mt-4 w-full rounded-2xl bg-white/5 p-4 text-[15px] text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C9EFF]"
+            className="mt-4 w-full rounded-2xl bg-white/5 px-4 py-3.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C9EFF] sm:p-4 sm:text-[15px]"
           />
 
           {secondaryPlaceholder && (
@@ -65,7 +65,7 @@ function ReflectionCard({
                 onSecondaryChange?.(event.target.value)
               }
               placeholder={secondaryPlaceholder}
-              className="mt-3 w-full rounded-2xl bg-white/5 p-4 text-[15px] text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C9EFF]"
+              className="mt-3 w-full rounded-2xl bg-white/5 px-4 py-3.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C9EFF] sm:p-4 sm:text-[15px]"
             />
           )}
         </div>
