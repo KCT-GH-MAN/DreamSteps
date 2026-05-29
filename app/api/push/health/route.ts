@@ -19,10 +19,29 @@ export async function GET() {
     .every(([, value]) => value);
   let subscriptionCount: number | null = null;
   let storeError: string | null = null;
+  let latestSchedules: Array<{
+    morningReminderTime: string;
+    eveningReflectionTime: string;
+    reengageAfterDays: number;
+    timezone: string;
+    language: "vi" | "en";
+    updatedAt: string;
+  }> = [];
 
   try {
     const subscriptions = await listSubscriptions();
     subscriptionCount = subscriptions.length;
+    latestSchedules = subscriptions
+      .map((subscription) => ({
+        morningReminderTime: subscription.morningReminderTime,
+        eveningReflectionTime: subscription.eveningReflectionTime,
+        reengageAfterDays: subscription.reengageAfterDays,
+        timezone: subscription.timezone,
+        language: subscription.language,
+        updatedAt: subscription.updatedAt,
+      }))
+      .sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
+      .slice(0, 5);
   } catch (error) {
     storeError = error instanceof Error ? error.message : "Unknown push store error";
   }
@@ -32,6 +51,7 @@ export async function GET() {
       ok: requiredEnvOk && !storeError,
       checks,
       subscriptionCount,
+      latestSchedules,
       storeError,
     },
     {

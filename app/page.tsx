@@ -1734,6 +1734,7 @@ export default function HomePage() {
         throw new Error("Failed to sync push reminder settings");
       }
 
+      setReminderStatus(t.stats.reminderEnabled);
       return true;
     } catch {
       setReminderStatus(t.stats.reminderPushUnsupported);
