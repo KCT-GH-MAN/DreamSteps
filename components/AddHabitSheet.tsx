@@ -236,7 +236,7 @@ export default function AddHabitSheet<IconName extends string>({
             <button
               type="button"
               onClick={onSubmit}
-              className="sticky bottom-3 w-full rounded-[20px] bg-[#7C9EFF] py-4 text-base font-black tracking-wide shadow-[0_10px_30px_rgba(124,158,255,0.3)] transition-all hover:brightness-110 active:scale-[0.99]"
+              className="w-full rounded-[20px] bg-[#7C9EFF] py-4 text-base font-black tracking-wide shadow-[0_10px_30px_rgba(124,158,255,0.3)] transition-all hover:brightness-110 active:scale-[0.99]"
             >
               {isEditing ? labels.saveHabit : labels.createHabit}
             </button>
