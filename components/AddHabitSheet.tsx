@@ -192,21 +192,21 @@ export default function AddHabitSheet<IconName extends string>({
                 <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-gray-500">
                   {labels.chooseMonthDays}
                 </p>
-                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                  {monthDays.map((day) => (
-                    <button
-                      key={day}
-                      type="button"
-                      onClick={() => onToggleMonthDay(day)}
-                      className={`rounded-xl py-2 text-xs font-black transition-all ${
-                        newDaysOfMonth.includes(day)
-                          ? "bg-[#7C9EFF] text-white"
-                          : "bg-white/5 text-gray-500"
-                      }`}
-                    >
-                      {day}
-                    </button>
-                  ))}
+                <div className="relative">
+                  <select
+                    value={newDaysOfMonth[0] ?? new Date().getDate()}
+                    onChange={(event) => onToggleMonthDay(Number(event.target.value))}
+                    className="h-[52px] w-full appearance-none rounded-2xl border border-white/5 bg-white/5 px-5 text-base font-black text-white outline-none transition-all focus:ring-2 focus:ring-[#7C9EFF]"
+                  >
+                    {monthDays.map((day) => (
+                      <option key={day} value={day} className="bg-[#1B2130] text-white">
+                        {day}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-xs font-black text-gray-500">
+                    ▾
+                  </span>
                 </div>
               </div>
             )}

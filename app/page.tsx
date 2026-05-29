@@ -1494,10 +1494,7 @@ export default function HomePage() {
   };
 
   const toggleMonthDay = (day: number) => {
-    setNewDaysOfMonth((prev) => {
-      if (prev.includes(day)) return prev.filter((item) => item !== day);
-      return [...prev, day];
-    });
+    setNewDaysOfMonth([day]);
   };
 
   const resetHabitForm = useCallback(() => {
@@ -1532,7 +1529,7 @@ export default function HomePage() {
     );
     setNewDaysOfMonth(
       habit.daysOfMonth && habit.daysOfMonth.length > 0
-        ? habit.daysOfMonth
+        ? [habit.daysOfMonth[0]]
         : [today.getDate()]
     );
     setIsAdding(true);
@@ -1566,7 +1563,7 @@ export default function HomePage() {
       daysOfMonth:
         newFrequency === "monthly"
           ? newDaysOfMonth.length > 0
-            ? newDaysOfMonth
+            ? [newDaysOfMonth[0]]
             : [fallbackMonthDay]
           : [],
     };
