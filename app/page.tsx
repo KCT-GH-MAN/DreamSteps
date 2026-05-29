@@ -1714,7 +1714,7 @@ export default function HomePage() {
           applicationServerKey: urlBase64ToUint8Array(publicKey),
         }));
 
-      await fetch("/api/push/subscribe", {
+      const response = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1729,6 +1729,10 @@ export default function HomePage() {
           language,
         }),
       });
+
+      if (!response.ok) {
+        throw new Error("Failed to sync push reminder settings");
+      }
 
       return true;
     } catch {
@@ -1761,6 +1765,29 @@ export default function HomePage() {
       setReminderStatus(t.stats.reminderPushUnsupported);
     }
   }
+
+  useEffect(() => {
+    if (!mounted || !isLoaded || !reminderSettings.enabled) return;
+
+    const timeoutId = window.setTimeout(() => {
+      void registerPushReminder(reminderSettings);
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+    // registerPushReminder reads UI status helpers; this sync trigger is intentionally
+    // limited to persisted reminder settings and language changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    mounted,
+    isLoaded,
+    reminderSettings.enabled,
+    reminderSettings.morningTime,
+    reminderSettings.eveningTime,
+    reminderSettings.reengageAfterDays,
+    language,
+  ]);
 
   async function touchPushSubscription() {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;

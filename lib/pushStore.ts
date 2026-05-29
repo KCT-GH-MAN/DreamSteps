@@ -87,10 +87,6 @@ function toSupabaseRow(
     reengage_after_days: item.reengageAfterDays,
     timezone: item.timezone,
     language: item.language,
-    last_sent_date: item.lastSentDate,
-    last_morning_sent_date: item.lastMorningSentDate,
-    last_evening_sent_date: item.lastEveningSentDate,
-    last_reengage_sent_date: item.lastReengageSentDate,
     last_seen_at: item.lastSeenAt,
     updated_at: new Date().toISOString(),
   };
@@ -157,8 +153,13 @@ async function upsertFileSubscription(
 ) {
   const items = await readFileStore();
   const endpoint = item.subscription.endpoint;
+  const existing = items.find((current) => current.endpoint === endpoint);
   const nextItem: StoredPushSubscription = {
     ...item,
+    lastSentDate: existing?.lastSentDate ?? item.lastSentDate,
+    lastMorningSentDate: existing?.lastMorningSentDate ?? item.lastMorningSentDate,
+    lastEveningSentDate: existing?.lastEveningSentDate ?? item.lastEveningSentDate,
+    lastReengageSentDate: existing?.lastReengageSentDate ?? item.lastReengageSentDate,
     endpoint,
     updatedAt: new Date().toISOString(),
   };
@@ -192,9 +193,16 @@ export async function upsertSubscription(
     endpoint: row.endpoint,
     subscription: row.subscription,
     reminderTime: row.reminder_time,
+    morningReminderTime: row.morning_reminder_time,
+    eveningReflectionTime: row.evening_reflection_time,
+    reengageAfterDays: row.reengage_after_days,
     timezone: row.timezone,
     language: row.language,
-    lastSentDate: row.last_sent_date,
+    lastSentDate: item.lastSentDate,
+    lastMorningSentDate: item.lastMorningSentDate,
+    lastEveningSentDate: item.lastEveningSentDate,
+    lastReengageSentDate: item.lastReengageSentDate,
+    lastSeenAt: row.last_seen_at,
     updatedAt: row.updated_at,
   };
 }

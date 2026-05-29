@@ -75,7 +75,7 @@ function getPayload(language: "vi" | "en", type: "morning" | "evening" | "reenga
       ? {
           morning: "🌅 Hãy bắt đầu 1 ngày mới bằng việc duy trì những thói quen tốt.",
           evening:
-            "🌙 Hãy chậm lại 1 nhịp để nhìn lại 1 ngày đã trôi qua, để chuẩn bị cho ngày mai tốt đẹp hơn.",
+            "🌙 Hãy chậm lại 1 nhịp để nhìn lại 1 ngày đã trôi qua và chuẩn bị cho ngày mai tốt đẹp hơn.",
           reengage:
             "✨ Đã vài ngày rồi bạn chưa mở ứng dụng DreamSteps. Đừng để các thói quen trở thành ký ức.",
         }
