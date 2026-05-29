@@ -2278,7 +2278,7 @@ export default function HomePage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.16 }}
-              className="mt-10 space-y-5"
+              className="mt-10 flex flex-col gap-5"
             >
               <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
                 <div className="mb-6 flex items-center justify-between">
@@ -2387,7 +2387,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
+              <div className={`order-[98] rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl bg-white/5 p-3 text-[#7EE2B8]">
                     <Bell size={20} />
@@ -2674,7 +2674,7 @@ export default function HomePage() {
                 )}
               </div>
 
-              <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
+              <div className={`order-[99] rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl bg-white/5 p-3 text-[#AFC2FF]">
                     <DatabaseBackup size={20} />
