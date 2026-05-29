@@ -27,7 +27,7 @@ function getPayload(language: "vi" | "en") {
     title: "DreamSteps",
     body:
       language === "vi"
-        ? "Một bước nhỏ hôm nay vẫn được tính. Mở DreamSteps nhé."
+        ? "Den gio nhac DreamSteps. Mo app de hoan thanh mot buoc nho hom nay."
         : "One small step today still counts. Open DreamSteps.",
     url: "/",
   });
