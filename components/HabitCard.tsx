@@ -46,6 +46,8 @@ function HabitCard({
   onDelete,
   onStartFocus,
 }: HabitCardProps) {
+  const [frequencyText, detailText] = frequencyLabel.split(" · ");
+
   return (
     <motion.div
       layout
@@ -72,9 +74,11 @@ function HabitCard({
             >
               {habit.title}
             </h4>
-            <p className="mt-1 text-[11px] font-bold uppercase leading-snug text-gray-500 sm:text-xs">
-              {habit.minutes} {minutesLabel} · {frequencyLabel}
-            </p>
+            <div className="mt-1 space-y-0.5 text-[11px] font-bold uppercase leading-snug text-gray-500 sm:text-xs">
+              <p>{habit.minutes} {minutesLabel}</p>
+              <p>{frequencyText}</p>
+              {detailText && <p>{detailText}</p>}
+            </div>
           </div>
         </div>
 
