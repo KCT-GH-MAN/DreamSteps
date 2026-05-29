@@ -6,15 +6,17 @@ import { getTranslations, type Language } from "@/lib/translations";
 const LANGUAGE_STORAGE_KEY = "ds-language";
 
 export function useLanguage() {
-  const [language, setLanguage] = useState<Language>("vi");
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") return "vi";
 
-  useEffect(() => {
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
 
     if (savedLanguage === "vi" || savedLanguage === "en") {
-      setLanguage(savedLanguage);
+      return savedLanguage;
     }
-  }, []);
+
+    return "vi";
+  });
 
   useEffect(() => {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language);

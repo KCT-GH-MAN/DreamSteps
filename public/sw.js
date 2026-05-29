@@ -1,4 +1,4 @@
-const CACHE_NAME = "dreamsteps-v3";
+const CACHE_NAME = "dreamsteps-v4";
 
 const APP_SHELL = [
   "/",
@@ -11,7 +11,7 @@ const APP_SHELL = [
   "/sounds/cafe.mp3",
   "/sounds/waves.mp3",
   "/sounds/brown-noise.mp3",
-  "/sounds/fireplace.mp3"
+  "/sounds/fireplace.mp3",
 ];
 
 self.addEventListener("install", (event) => {
@@ -33,22 +33,25 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => caches.match("/"));
+      return (
+        cached ||
+        fetch(event.request)
+          .then((response) => {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            return response;
+          })
+          .catch(() => caches.match("/"))
+      );
     })
   );
 });
 
-
 self.addEventListener("push", (event) => {
   let data = {
     title: "DreamSteps",
-    body: "Một bước nhỏ cho hôm nay nhé 🌱",
+    body: "One small step today still counts.",
+    url: "/",
   };
 
   if (event.data) {
@@ -61,7 +64,7 @@ self.addEventListener("push", (event) => {
 
   event.waitUntil(
     self.registration.showNotification(data.title || "DreamSteps", {
-      body: data.body || "Một bước nhỏ cho hôm nay nhé 🌱",
+      body: data.body || "One small step today still counts.",
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       data: {

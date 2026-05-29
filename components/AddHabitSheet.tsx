@@ -21,6 +21,8 @@ interface AddHabitSheetProps<IconName extends string> {
   labels: {
     create: string;
     newHabit: string;
+    edit: string;
+    editHabit: string;
     titlePlaceholder: string;
     minutesPlaceholder: string;
     frequencyDaily: string;
@@ -29,6 +31,7 @@ interface AddHabitSheetProps<IconName extends string> {
     chooseWeekDays: string;
     chooseMonthDays: string;
     createHabit: string;
+    saveHabit: string;
     closeForm: string;
   };
   onClose: () => void;
@@ -38,7 +41,8 @@ interface AddHabitSheetProps<IconName extends string> {
   onChangeFrequency: (value: HabitFrequency) => void;
   onToggleWeekDay: (day: number) => void;
   onToggleMonthDay: (day: number) => void;
-  onCreate: () => void;
+  isEditing: boolean;
+  onSubmit: () => void;
 }
 
 export default function AddHabitSheet<IconName extends string>({
@@ -54,6 +58,7 @@ export default function AddHabitSheet<IconName extends string>({
   newDaysOfWeek,
   newDaysOfMonth,
   labels,
+  isEditing,
   onClose,
   onChangeTitle,
   onChangeMinutes,
@@ -61,7 +66,7 @@ export default function AddHabitSheet<IconName extends string>({
   onChangeFrequency,
   onToggleWeekDay,
   onToggleMonthDay,
-  onCreate,
+  onSubmit,
 }: AddHabitSheetProps<IconName>) {
   return (
     <AnimatePresence>
@@ -76,6 +81,9 @@ export default function AddHabitSheet<IconName extends string>({
           />
 
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label={isEditing ? labels.editHabit : labels.newHabit}
             initial={{ y: "100%", scale: 0.98 }}
             animate={{ y: 0, scale: 1 }}
             exit={{ y: "100%", scale: 0.98 }}
@@ -101,9 +109,11 @@ export default function AddHabitSheet<IconName extends string>({
             <div className="flex items-center justify-between mb-7">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">
-                  {labels.create}
+                  {isEditing ? labels.edit : labels.create}
                 </p>
-                <h2 className="mt-1 text-2xl font-black">{labels.newHabit}</h2>
+                <h2 className="mt-1 text-2xl font-black">
+                  {isEditing ? labels.editHabit : labels.newHabit}
+                </h2>
               </div>
 
               <button
@@ -225,10 +235,10 @@ export default function AddHabitSheet<IconName extends string>({
 
             <button
               type="button"
-              onClick={onCreate}
+              onClick={onSubmit}
               className="w-full bg-[#7C9EFF] py-4 rounded-[20px] font-black text-base tracking-wide hover:brightness-110 transition-all shadow-[0_10px_30px_rgba(124,158,255,0.3)] active:scale-[0.99]"
             >
-              {labels.createHabit}
+              {isEditing ? labels.saveHabit : labels.createHabit}
             </button>
           </motion.div>
         </div>

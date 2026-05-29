@@ -2,7 +2,7 @@
 
 import { memo, ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Check, Trash2 } from "lucide-react";
+import { Check, History, Pencil, Trash2 } from "lucide-react";
 
 interface HabitCardProps {
   habit: {
@@ -16,10 +16,14 @@ interface HabitCardProps {
   surfaceClassName: string;
   isCelebrating: boolean;
   startFocusLabel: string;
+  detailsLabel: string;
+  editLabel: string;
   deleteLabel: string;
   completeLabel: string;
   minutesLabel: string;
   onComplete: () => void;
+  onViewDetails: () => void;
+  onEdit: () => void;
   onDelete: () => void;
   onStartFocus: () => void;
 }
@@ -31,10 +35,14 @@ function HabitCard({
   surfaceClassName,
   isCelebrating,
   startFocusLabel,
+  detailsLabel,
+  editLabel,
   deleteLabel,
   completeLabel,
   minutesLabel,
   onComplete,
+  onViewDetails,
+  onEdit,
   onDelete,
   onStartFocus,
 }: HabitCardProps) {
@@ -71,6 +79,24 @@ function HabitCard({
         </div>
 
         <div className="flex gap-2">
+          <button
+            type="button"
+            aria-label={`${detailsLabel} ${habit.title}`}
+            onClick={onViewDetails}
+            className="p-2 text-gray-500 transition-colors hover:text-white"
+          >
+            <History size={18} />
+          </button>
+
+          <button
+            type="button"
+            aria-label={`${editLabel} ${habit.title}`}
+            onClick={onEdit}
+            className="p-2 text-gray-500 transition-colors hover:text-white"
+          >
+            <Pencil size={18} />
+          </button>
+
           <button
             type="button"
             aria-label={`${deleteLabel} ${habit.title}`}

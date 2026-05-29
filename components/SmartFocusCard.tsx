@@ -17,7 +17,6 @@ interface SmartFocusCardProps {
   suggestedLabel: string;
   minutesLabel: string;
   suggestedSession: FocusSession;
-  surfaceClassName: string;
   accentTextClassName: string;
   accentBorderClassName: string;
   accentBgClassName: string;
@@ -29,7 +28,6 @@ function SmartFocusCard({
   suggestedLabel,
   minutesLabel,
   suggestedSession,
-  surfaceClassName,
   accentTextClassName,
   accentBorderClassName,
   accentBgClassName,

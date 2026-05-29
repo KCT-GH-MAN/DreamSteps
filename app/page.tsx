@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence, animate, useMotionValue, useTransform } from "framer-motion";
 import FocusModal from "@/components/FocusModal";
 import BottomNav from "@/components/BottomNav";
 import HabitCard from "@/components/HabitCard";
 import SmartFocusCard from "@/components/SmartFocusCard";
 import AddHabitSheet from "@/components/AddHabitSheet";
+import HabitDetailSheet from "@/components/HabitDetailSheet";
 import ReflectionCard from "@/components/ReflectionCard";
 import MoodSelectorCard from "@/components/MoodSelectorCard";
 import { useLanguage } from "@/lib/useLanguage";
@@ -18,6 +20,7 @@ import {
   Brain,
   Plus,
   Trash2,
+  Pencil,
   Coffee,
   Music,
   GlassWater,
@@ -38,6 +41,10 @@ import {
   BatteryLow,
   CloudLightning,
   Trophy,
+  Download,
+  Upload,
+  DatabaseBackup,
+  Bell,
 } from "lucide-react";
 
 const ICON_MAP = {
@@ -191,6 +198,27 @@ type AnalyticsData = {
   days: DailyAnalytics[];
 };
 
+type HabitHistoryEntry = {
+  date: string;
+  minutes: number;
+  completedAt: string;
+};
+
+type HabitHistoryData = Record<string, HabitHistoryEntry[]>;
+
+type DreamStepsBackup = {
+  app: "DreamSteps";
+  version: 1;
+  exportedAt: string;
+  data: Record<string, string>;
+};
+
+type ReminderSettings = {
+  enabled: boolean;
+  time: string;
+  lastSentDate: string | null;
+};
+
 type TimelineEntry = {
   id: number;
   type: "habit" | "focus" | "reflection";
@@ -270,9 +298,35 @@ const STORAGE_KEYS = {
   lastCompleted: "ds-last-completed",
   lastActive: "ds-last-active",
   analytics: "ds-analytics",
+  habitHistory: "ds-habit-history",
+  reminderSettings: "ds-reminder-settings",
   reflections: "ds-reflections",
   timeline: "ds-timeline",
 };
+
+const BACKUP_PREFIX = "ds-";
+const DEFAULT_REMINDER_SETTINGS: ReminderSettings = {
+  enabled: false,
+  time: "20:00",
+  lastSentDate: null,
+};
+
+function isValidReminderTime(value: string) {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let index = 0; index < rawData.length; index += 1) {
+    outputArray[index] = rawData.charCodeAt(index);
+  }
+
+  return outputArray;
+}
 
 function safeParseHabits(value: string | null): Habit[] {
   if (!value) return [];
@@ -461,6 +515,252 @@ function saveAnalytics(data: AnalyticsData) {
       days: data.days.slice(-90),
     })
   );
+}
+
+function getHabitHistory(): HabitHistoryData {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.habitHistory);
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw);
+
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(parsed)
+        .map(([habitId, entries]) => {
+          if (!Array.isArray(entries)) return [habitId, []];
+
+          const safeEntries = entries
+            .filter((entry): entry is HabitHistoryEntry => {
+              return (
+                entry &&
+                typeof entry === "object" &&
+                typeof entry.date === "string" &&
+                typeof entry.minutes === "number" &&
+                typeof entry.completedAt === "string"
+              );
+            })
+            .slice(-365);
+
+          return [habitId, safeEntries];
+        })
+        .filter(([, entries]) => entries.length > 0)
+    );
+  } catch {
+    return {};
+  }
+}
+
+function saveHabitHistory(data: HabitHistoryData) {
+  localStorage.setItem(STORAGE_KEYS.habitHistory, JSON.stringify(data));
+}
+
+function recordHabitCompletion(habit: Habit) {
+  const today = getTodayStr();
+  const history = getHabitHistory();
+  const habitId = String(habit.id);
+  const entries = history[habitId] ?? [];
+
+  if (entries.some((entry) => entry.date === today)) {
+    return history;
+  }
+
+  const nextHistory = {
+    ...history,
+    [habitId]: [
+      ...entries,
+      {
+        date: today,
+        minutes: habit.minutes,
+        completedAt: new Date().toISOString(),
+      },
+    ].slice(-365),
+  };
+
+  saveHabitHistory(nextHistory);
+  return nextHistory;
+}
+
+function deleteHabitHistory(habitId: number) {
+  const history = getHabitHistory();
+  delete history[String(habitId)];
+  saveHabitHistory(history);
+  return history;
+}
+
+function getHabitCurrentStreak(entries: HabitHistoryEntry[]) {
+  const completedDates = new Set(entries.map((entry) => entry.date));
+  const date = getStartOfDay(new Date());
+  let streak = 0;
+
+  while (completedDates.has(getLocalDateKey(date))) {
+    streak += 1;
+    date.setDate(date.getDate() - 1);
+  }
+
+  return streak;
+}
+
+function getLast14HabitDays(entries: HabitHistoryEntry[]) {
+  const today = getStartOfDay(new Date());
+
+  return Array.from({ length: 14 }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (13 - index));
+
+    const dateStr = getLocalDateKey(date);
+    const dayEntries = entries.filter((entry) => entry.date === dateStr);
+
+    return {
+      date: dateStr,
+      completed: dayEntries.length > 0,
+      minutes: dayEntries.reduce((sum, entry) => sum + entry.minutes, 0),
+    };
+  });
+}
+
+function createBackupPayload(): DreamStepsBackup {
+  const data: Record<string, string> = {};
+
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+
+    if (!key || !key.startsWith(BACKUP_PREFIX)) continue;
+
+    const value = localStorage.getItem(key);
+    if (value !== null) data[key] = value;
+  }
+
+  return {
+    app: "DreamSteps",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data,
+  };
+}
+
+function parseBackupPayload(value: string): DreamStepsBackup | null {
+  try {
+    const parsed = JSON.parse(value);
+
+    if (
+      !parsed ||
+      parsed.app !== "DreamSteps" ||
+      parsed.version !== 1 ||
+      typeof parsed.exportedAt !== "string" ||
+      !parsed.data ||
+      typeof parsed.data !== "object" ||
+      Array.isArray(parsed.data)
+    ) {
+      return null;
+    }
+
+    const data = Object.fromEntries(
+      Object.entries(parsed.data).filter(([key, item]) => {
+        return key.startsWith(BACKUP_PREFIX) && typeof item === "string";
+      })
+    ) as Record<string, string>;
+
+    return {
+      app: "DreamSteps",
+      version: 1,
+      exportedAt: parsed.exportedAt,
+      data,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getReminderSettings(): ReminderSettings {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.reminderSettings);
+    if (!raw) return DEFAULT_REMINDER_SETTINGS;
+
+    const parsed = JSON.parse(raw);
+
+    if (!parsed || typeof parsed !== "object") {
+      return DEFAULT_REMINDER_SETTINGS;
+    }
+
+    return {
+      enabled: parsed.enabled === true,
+      time:
+        typeof parsed.time === "string" && isValidReminderTime(parsed.time)
+          ? parsed.time
+          : DEFAULT_REMINDER_SETTINGS.time,
+      lastSentDate:
+        typeof parsed.lastSentDate === "string" ? parsed.lastSentDate : null,
+    };
+  } catch {
+    return DEFAULT_REMINDER_SETTINGS;
+  }
+}
+
+function saveReminderSettings(settings: ReminderSettings) {
+  localStorage.setItem(STORAGE_KEYS.reminderSettings, JSON.stringify(settings));
+}
+
+async function showBrowserReminderNotification({
+  pendingCount,
+  isTest = false,
+  labels,
+  setStatus,
+}: {
+  pendingCount: number;
+  isTest?: boolean;
+  labels: ReturnType<typeof useLanguage>["t"]["stats"];
+  setStatus: (value: string) => void;
+}) {
+  if (!("Notification" in window)) {
+    setStatus(labels.reminderUnsupported);
+    return false;
+  }
+
+  let permission = Notification.permission;
+
+  if (permission === "default") {
+    permission = await Notification.requestPermission();
+  }
+
+  if (permission !== "granted") {
+    setStatus(labels.reminderDenied);
+    return false;
+  }
+
+  const title = labels.reminderNotificationTitle;
+  const body = isTest
+    ? labels.reminderTestBody
+    : labels.reminderNotificationBody.replace("{count}", String(pendingCount));
+
+  try {
+    if ("serviceWorker" in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+
+      await registration.showNotification(title, {
+        body,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        data: {
+          url: "/",
+        },
+      });
+    } else {
+      new Notification(title, {
+        body,
+        icon: "/icons/icon-192.png",
+      });
+    }
+
+    setStatus(isTest ? labels.reminderTestSent : labels.reminderSent);
+    return true;
+  } catch {
+    setStatus(labels.reminderUnsupported);
+    return false;
+  }
 }
 
 function trackDailyProgress(minutes: number) {
@@ -810,6 +1110,7 @@ export default function HomePage() {
   const [selectedMinutes, setSelectedMinutes] = useState(25);
   const [selectedHabitTitle, setSelectedHabitTitle] = useState("Focus Session");
   const [selectedSessionType, setSelectedSessionType] = useState<string>("gentle");
+  const [selectedHabitFocusId, setSelectedHabitFocusId] = useState<number | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
 
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -818,12 +1119,21 @@ export default function HomePage() {
   const [streak, setStreak] = useState(0);
   const [lastCompletedDate, setLastCompletedDate] = useState<string | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData>({ days: [] });
+  const [habitHistory, setHabitHistory] = useState<HabitHistoryData>({});
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [dailyReflection, setDailyReflection] =
     useState<DailyReflection>(createEmptyReflection());
   const completedHabitIdsRef = useRef<Set<number>>(new Set());
 
   const [isAdding, setIsAdding] = useState(false);
+  const [selectedHabitDetailId, setSelectedHabitDetailId] = useState<number | null>(null);
+  const [editingHabitId, setEditingHabitId] = useState<number | null>(null);
+  const [backupStatus, setBackupStatus] = useState<string | null>(null);
+  const backupInputRef = useRef<HTMLInputElement | null>(null);
+  const [reminderSettings, setReminderSettings] = useState<ReminderSettings>(
+    DEFAULT_REMINDER_SETTINGS
+  );
+  const [reminderStatus, setReminderStatus] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newMinutes, setNewMinutes] = useState("10");
   const [newIcon, setNewIcon] = useState<IconName>("BookOpen");
@@ -871,10 +1181,7 @@ export default function HomePage() {
     [todayHabits]
   );
   const showEveningReflection = useMemo(() => shouldShowEveningReflection(), []);
-  const latestReflections = useMemo(
-    () => (mounted ? getReflections().slice(-5).reverse() : []),
-    [mounted, dailyReflection]
-  );
+  const latestReflections = mounted ? getReflections().slice(-5).reverse() : [];
   const todayTimeline = useMemo(
     () =>
       timeline.filter((entry) => {
@@ -887,6 +1194,22 @@ export default function HomePage() {
     [dailyReflection.mood]
   );
   const currentTheme = THEMES[adaptiveTheme];
+  const testFocusDurationSeconds =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("testFocus") === "1"
+      ? 1
+      : undefined;
+  const selectedHabitDetail = useMemo(
+    () =>
+      selectedHabitDetailId === null
+        ? null
+        : habits.find((habit) => habit.id === selectedHabitDetailId) ?? null,
+    [habits, selectedHabitDetailId]
+  );
+  const selectedHabitHistory =
+    selectedHabitDetail === null
+      ? []
+      : habitHistory[String(selectedHabitDetail.id)] ?? [];
 
   const refreshAppData = useCallback(() => {
     const now = new Date();
@@ -934,10 +1257,12 @@ export default function HomePage() {
     setMomentum(Number.isFinite(savedMomentum) ? savedMomentum : 0);
     setLastCompletedDate(savedLastCompleted);
     setAnalytics(getAnalytics());
+    setHabitHistory(getHabitHistory());
+    setReminderSettings(getReminderSettings());
     setTimeline(getTimeline());
     setDailyReflection(getTodayReflection());
     setIsLoaded(true);
-  }, [language, t.greeting]);
+  }, [t]);
 
   useEffect(() => {
     const hasSeenWelcome =
@@ -946,11 +1271,13 @@ export default function HomePage() {
         : "true";
 
     if (!hasSeenWelcome) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowWelcome(true);
     }
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     refreshAppData();
 
@@ -1055,7 +1382,50 @@ export default function HomePage() {
     });
   };
 
-  const addHabit = () => {
+  const resetHabitForm = useCallback(() => {
+    const today = new Date();
+
+    setEditingHabitId(null);
+    setNewTitle("");
+    setNewMinutes("10");
+    setNewIcon("BookOpen");
+    setNewFrequency("daily");
+    setNewDaysOfWeek([today.getDay()]);
+    setNewDaysOfMonth([today.getDate()]);
+  }, []);
+
+  const openAddHabitSheet = () => {
+    resetHabitForm();
+    setIsAdding(true);
+  };
+
+  const openEditHabitSheet = (habit: Habit) => {
+    const today = new Date();
+
+    setEditingHabitId(habit.id);
+    setNewTitle(habit.title);
+    setNewMinutes(String(habit.minutes));
+    setNewIcon(habit.iconName);
+    setNewFrequency(habit.frequency);
+    setNewDaysOfWeek(
+      habit.daysOfWeek && habit.daysOfWeek.length > 0
+        ? habit.daysOfWeek
+        : [today.getDay()]
+    );
+    setNewDaysOfMonth(
+      habit.daysOfMonth && habit.daysOfMonth.length > 0
+        ? habit.daysOfMonth
+        : [today.getDate()]
+    );
+    setIsAdding(true);
+  };
+
+  const closeHabitSheet = () => {
+    setIsAdding(false);
+    resetHabitForm();
+  };
+
+  const saveHabit = () => {
     const title = newTitle.trim();
     if (!title) return;
 
@@ -1064,12 +1434,10 @@ export default function HomePage() {
     const fallbackWeekDay = new Date().getDay();
     const fallbackMonthDay = new Date().getDate();
 
-    const habit: Habit = {
-      id: Date.now(),
+    const habitValues = {
       title,
       iconName: newIcon,
       minutes,
-      completed: false,
       frequency: newFrequency,
       daysOfWeek:
         newFrequency === "weekly"
@@ -1085,18 +1453,42 @@ export default function HomePage() {
           : [],
     };
 
+    if (editingHabitId !== null) {
+      setHabits((prev) =>
+        prev.map((habit) =>
+          habit.id === editingHabitId
+            ? {
+                ...habit,
+                ...habitValues,
+              }
+            : habit
+        )
+      );
+      closeHabitSheet();
+      return;
+    }
+
+    const habit: Habit = {
+      id: Date.now(),
+      completed: false,
+      ...habitValues,
+    };
+
     setHabits((prev) => [...prev, habit]);
-    setNewTitle("");
-    setNewMinutes("10");
-    setNewIcon("BookOpen");
-    setNewFrequency("daily");
-    setNewDaysOfWeek([fallbackWeekDay]);
-    setNewDaysOfMonth([fallbackMonthDay]);
-    setIsAdding(false);
+    closeHabitSheet();
   };
 
   const deleteHabit = (habitId: number) => {
     setHabits((prev) => prev.filter((habit) => habit.id !== habitId));
+    setHabitHistory(deleteHabitHistory(habitId));
+
+    if (selectedHabitFocusId === habitId) {
+      setSelectedHabitFocusId(null);
+    }
+
+    if (selectedHabitDetailId === habitId) {
+      setSelectedHabitDetailId(null);
+    }
   };
 
   const completeHabit = (habit: Habit) => {
@@ -1149,15 +1541,231 @@ export default function HomePage() {
 
     setTimeline(getTimeline());
 
+    setHabitHistory(recordHabitCompletion(currentHabit));
     trackDailyProgress(currentHabit.minutes);
     setAnalytics(getAnalytics());
   };
 
   const handleFocusComplete = (minutes: number) => {
     trackFocusOnly(minutes);
+
+    if (selectedHabitFocusId !== null) {
+      const linkedHabit = habits.find((habit) => habit.id === selectedHabitFocusId);
+
+      if (linkedHabit && !linkedHabit.completed && minutes >= linkedHabit.minutes) {
+        completeHabit(linkedHabit);
+      }
+    }
+
+    setSelectedHabitFocusId(null);
     setAnalytics(getAnalytics());
     setTimeline(getTimeline());
   };
+
+  const exportBackup = () => {
+    const backup = createBackupPayload();
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = url;
+    anchor.download = `dreamsteps-backup-${getTodayStr()}.json`;
+    anchor.click();
+
+    URL.revokeObjectURL(url);
+    setBackupStatus(t.stats.backupExported);
+  };
+
+  const importBackupFile = async (file: File) => {
+    const text = await file.text();
+    const backup = parseBackupPayload(text);
+
+    if (!backup) {
+      setBackupStatus(t.stats.backupInvalid);
+      return;
+    }
+
+    const shouldImport = window.confirm(t.stats.backupImportConfirm);
+    if (!shouldImport) return;
+
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+
+      if (key?.startsWith(BACKUP_PREFIX)) {
+        localStorage.removeItem(key);
+      }
+    }
+
+    Object.entries(backup.data).forEach(([key, value]) => {
+      localStorage.setItem(key, value);
+    });
+
+    refreshAppData();
+    setBackupStatus(t.stats.backupImported);
+  };
+
+  const updateReminderSettings = (updates: Partial<ReminderSettings>) => {
+    setReminderSettings((current) => {
+      const next = {
+        ...current,
+        ...updates,
+      };
+
+      saveReminderSettings(next);
+      return next;
+    });
+  };
+
+  const enableReminders = async () => {
+    const pendingCount = todayHabits.filter((habit) => !habit.completed).length;
+    const didShow = await showBrowserReminderNotification({
+      pendingCount: Math.max(1, pendingCount),
+      isTest: true,
+      labels: t.stats,
+      setStatus: setReminderStatus,
+    });
+
+    if (didShow) {
+      await registerPushReminder();
+      updateReminderSettings({ enabled: true });
+      setReminderStatus(t.stats.reminderEnabled);
+    }
+  };
+
+  const disableReminders = () => {
+    updateReminderSettings({ enabled: false });
+    void unregisterPushReminder();
+    setReminderStatus(t.stats.reminderDisabled);
+  };
+
+  const sendTestReminder = () => {
+    const pendingCount = todayHabits.filter((habit) => !habit.completed).length;
+    void showBrowserReminderNotification({
+      pendingCount: Math.max(1, pendingCount),
+      isTest: true,
+      labels: t.stats,
+      setStatus: setReminderStatus,
+    });
+  };
+
+  async function registerPushReminder(reminderTime = reminderSettings.time) {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setReminderStatus(t.stats.reminderPushUnsupported);
+      return false;
+    }
+
+    try {
+      const keyResponse = await fetch("/api/push/public-key");
+      const { publicKey } = (await keyResponse.json()) as { publicKey?: string };
+
+      if (!publicKey) {
+        setReminderStatus(t.stats.reminderPushMissingKey);
+        return false;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      const existingSubscription =
+        await registration.pushManager.getSubscription();
+      const subscription =
+        existingSubscription ??
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        }));
+
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscription: subscription.toJSON(),
+          reminderTime,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          language,
+        }),
+      });
+
+      return true;
+    } catch {
+      setReminderStatus(t.stats.reminderPushUnsupported);
+      return false;
+    }
+  }
+
+  async function unregisterPushReminder() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) return;
+
+      await fetch("/api/push/unsubscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+        }),
+      });
+
+      await subscription.unsubscribe();
+    } catch {
+      setReminderStatus(t.stats.reminderPushUnsupported);
+    }
+  }
+
+  useEffect(() => {
+    if (!mounted || !isLoaded || !reminderSettings.enabled) return;
+
+    const checkReminder = () => {
+      const pendingHabits = todayHabits.filter((habit) => !habit.completed);
+
+      if (pendingHabits.length === 0) return;
+
+      const today = getTodayStr();
+      if (reminderSettings.lastSentDate === today) return;
+
+      const now = new Date();
+      const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(
+        now.getMinutes()
+      ).padStart(2, "0")}`;
+
+      if (currentTime < reminderSettings.time) return;
+
+      void showBrowserReminderNotification({
+        pendingCount: pendingHabits.length,
+        labels: t.stats,
+        setStatus: setReminderStatus,
+      }).then((didShow) => {
+        if (!didShow) return;
+
+        updateReminderSettings({
+          lastSentDate: today,
+        });
+      });
+    };
+
+    checkReminder();
+    const intervalId = window.setInterval(checkReminder, 60 * 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [
+    mounted,
+    isLoaded,
+    reminderSettings.enabled,
+    reminderSettings.time,
+    reminderSettings.lastSentDate,
+    todayHabits,
+    t.stats,
+  ]);
 
   const renderIcon = (iconName: IconName, completed: boolean) => {
     const IconComp = ICON_MAP[iconName] || Star;
@@ -1193,9 +1801,11 @@ export default function HomePage() {
               onClick={toggleLanguage}
               className="rounded-2xl border border-white/5 bg-white/5 px-3.5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-gray-300 transition-colors hover:bg-white/10"
             >
-              <img
+              <Image
                 src={language === "vi" ? "/flags/vn.svg" : "/flags/us.svg"}
                 alt="language"
+                width={24}
+                height={16}
                 className="h-4 w-6 object-cover drop-shadow-[0_0_6px_rgba(255,255,255,0.15)]"
               />
             </button>
@@ -1204,7 +1814,7 @@ export default function HomePage() {
               <button
                 type="button"
                 aria-label={t.header.addHabit}
-                onClick={() => setIsAdding(true)}
+                onClick={openAddHabitSheet}
                 className="bg-white/5 p-3.5 rounded-2xl border border-white/5 shadow-lg hover:bg-white/10 transition-colors"
               >
                 <Plus size={24} strokeWidth={2.5} />
@@ -1306,7 +1916,6 @@ export default function HomePage() {
                 
                 suggestedSession={suggestedSession}
                 
-                surfaceClassName={currentTheme.surface}
                 accentTextClassName={currentTheme.accentText}
                 accentBorderClassName={currentTheme.accentBorder}
                 accentBgClassName={currentTheme.accentBg}
@@ -1315,6 +1924,7 @@ export default function HomePage() {
                   setSelectedMinutes(suggestedSession.minutes);
                   setSelectedHabitTitle(suggestedSession.title);
                   setSelectedSessionType(suggestedSession.id);
+                  setSelectedHabitFocusId(null);
                   localStorage.setItem("ds-last-session-type", suggestedSession.id);
                   setOpenFocus(true);
                 }}
@@ -1355,23 +1965,29 @@ export default function HomePage() {
                 ) : (
                   <div className="space-y-4">
                     <AnimatePresence mode="popLayout">
-                      {todayHabits.map((habit) => (
+                      {todayHabits.map((habit, index) => (
                         <HabitCard
-                          key={habit.id}
+                          key={`today-habit-${habit.id}-${index}`}
                           habit={habit}
                           icon={renderIcon(habit.iconName, habit.completed)}
                           frequencyLabel={getFrequencyLabel(habit, t, weekDays)}
                           surfaceClassName={currentTheme.surface}
                           isCelebrating={celebratingHabitId === habit.id}
                           onComplete={() => completeHabit(habit)}
+                          onViewDetails={() => setSelectedHabitDetailId(habit.id)}
+                          onEdit={() => openEditHabitSheet(habit)}
                           onDelete={() => deleteHabit(habit.id)}
                           startFocusLabel={t.habits.startFocus}
+                          detailsLabel={t.habits.viewDetails}
+                          editLabel={t.habits.editHabit}
                           deleteLabel={t.habits.deleteHabit}
                           completeLabel={t.habits.completeHabit}
                           minutesLabel={t.common.shortMinutes}
                           onStartFocus={() => {
                             setSelectedMinutes(habit.minutes);
                             setSelectedHabitTitle(habit.title);
+                            setSelectedSessionType("gentle");
+                            setSelectedHabitFocusId(habit.id);
                             setOpenFocus(true);
                           }}
                         />
@@ -1388,9 +2004,9 @@ export default function HomePage() {
                   </h3>
 
                   <div className="space-y-3">
-                    {futureHabits.map((habit) => (
+                    {futureHabits.map((habit, index) => (
                       <div
-                        key={habit.id}
+                        key={`future-habit-${habit.id}-${index}`}
                         className="flex items-center justify-between rounded-[24px] border border-white/5 bg-white/[0.03] px-5 py-4"
                       >
                         <div>
@@ -1400,14 +2016,34 @@ export default function HomePage() {
                           </p>
                         </div>
 
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            aria-label={`${t.habits.viewDetails} ${habit.title}`}
+                            onClick={() => setSelectedHabitDetailId(habit.id)}
+                            className="p-2 text-gray-600 hover:text-white"
+                          >
+                            <BarChart3 size={17} />
+                          </button>
+
+                          <button
+                            type="button"
+                            aria-label={`${t.habits.editHabit} ${habit.title}`}
+                            onClick={() => openEditHabitSheet(habit)}
+                            className="p-2 text-gray-600 hover:text-white"
+                          >
+                            <Pencil size={17} />
+                          </button>
+
                         <button
                           type="button"
-                          aria-label={`Xoá thói quen ${habit.title}`}
+                          aria-label={`${t.habits.deleteHabit} ${habit.title}`}
                           onClick={() => deleteHabit(habit.id)}
                           className="p-2 text-gray-600 hover:text-white"
                         >
                           <Trash2 size={17} />
                         </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1457,7 +2093,7 @@ export default function HomePage() {
                 <div className="grid grid-cols-7 gap-3">
                   {weeklyHeatmap.map((day, index) => (
                     <motion.div
-                      key={day.date}
+                      key={`heatmap-${day.date || index}`}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.04 }}
@@ -1549,6 +2185,157 @@ export default function HomePage() {
                 </div>
               </div>
 
+              <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl bg-white/5 p-3 text-[#AFC2FF]">
+                    <DatabaseBackup size={20} />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
+                      {t.stats.backupTitle}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-400">
+                      {t.stats.backupSubtitle}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={exportBackup}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-white/5 px-4 py-3.5 text-sm font-black transition-colors hover:bg-white/10"
+                  >
+                    <Download size={16} />
+                    {t.stats.exportBackup}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => backupInputRef.current?.click()}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-[#7C9EFF]/15 px-4 py-3.5 text-sm font-black text-[#AFC2FF] transition-colors hover:bg-[#7C9EFF]/20"
+                  >
+                    <Upload size={16} />
+                    {t.stats.importBackup}
+                  </button>
+                </div>
+
+                <input
+                  ref={backupInputRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+
+                    if (file) {
+                      void importBackupFile(file);
+                    }
+                  }}
+                />
+
+                {backupStatus && (
+                  <p className="mt-4 rounded-2xl bg-white/5 px-4 py-3 text-sm font-bold text-gray-300">
+                    {backupStatus}
+                  </p>
+                )}
+              </div>
+
+              <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl bg-white/5 p-3 text-[#7EE2B8]">
+                    <Bell size={20} />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
+                          {t.stats.reminderTitle}
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-gray-400">
+                          {t.stats.reminderSubtitle}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-black uppercase ${
+                          reminderSettings.enabled
+                            ? "bg-[#7EE2B8]/15 text-[#BDF7DE]"
+                            : "bg-white/5 text-gray-500"
+                        }`}
+                      >
+                        {reminderSettings.enabled
+                          ? t.stats.reminderOn
+                          : t.stats.reminderOff}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-[1fr_auto] gap-3">
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                      {t.stats.reminderTime}
+                    </span>
+                    <input
+                      type="time"
+                      value={reminderSettings.time}
+                      onChange={(event) => {
+                        const nextTime = event.target.value;
+                        updateReminderSettings({
+                          time: nextTime,
+                          lastSentDate: null,
+                        });
+
+                        if (reminderSettings.enabled) {
+                          void registerPushReminder(nextTime);
+                        }
+                      }}
+                      className="h-12 w-full rounded-2xl border border-white/5 bg-white/5 px-4 text-sm font-black text-white outline-none focus:ring-2 focus:ring-[#7C9EFF]"
+                    />
+                  </label>
+
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={
+                        reminderSettings.enabled
+                          ? disableReminders
+                          : () => void enableReminders()
+                      }
+                      className={`h-12 rounded-2xl px-4 text-sm font-black transition-colors ${
+                        reminderSettings.enabled
+                          ? "bg-white/5 text-gray-300 hover:bg-white/10"
+                          : "bg-[#7EE2B8] text-black hover:brightness-110"
+                      }`}
+                    >
+                      {reminderSettings.enabled
+                        ? t.stats.disableReminder
+                        : t.stats.enableReminder}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={sendTestReminder}
+                    className="rounded-2xl bg-white/5 px-4 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    {t.stats.testReminder}
+                  </button>
+                </div>
+
+                {reminderStatus && (
+                  <p className="mt-4 rounded-2xl bg-white/5 px-4 py-3 text-sm font-bold text-gray-300">
+                    {reminderStatus}
+                  </p>
+                )}
+              </div>
+
 
               <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
                 <div className="flex items-center justify-between">
@@ -1573,7 +2360,7 @@ export default function HomePage() {
                   <div className="mt-5 max-h-[250px] space-y-4 overflow-y-auto hide-scrollbar py-2 pl-2 pr-1">
                     {todayTimeline.slice(0, 5).map((entry, index) => (
                       <motion.div
-                        key={entry.id}
+                        key={`timeline-${entry.id || entry.createdAt || index}-${index}`}
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.03 }}
@@ -1634,7 +2421,7 @@ export default function HomePage() {
                   <div className="mt-5 max-h-[250px] space-y-4 overflow-y-auto hide-scrollbar py-2 pl-2 pr-1">
                     {latestReflections.map((item, index) => (
   <motion.div
-    key={item.date}
+    key={`reflection-${item.date || index}-${index}`}
     initial={{ opacity: 0, y: 8 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.03 }}
@@ -1698,6 +2485,35 @@ export default function HomePage() {
         onChangeTab={setActiveTab}
       />
 
+      {selectedHabitDetail && (
+        <HabitDetailSheet
+          open={selectedHabitDetail !== null}
+          title={selectedHabitDetail.title}
+          frequencyLabel={getFrequencyLabel(selectedHabitDetail, t, weekDays)}
+          minutes={selectedHabitDetail.minutes}
+          surfaceClassName={currentTheme.surface}
+          history={selectedHabitHistory}
+          historyDays={getLast14HabitDays(selectedHabitHistory)}
+          currentStreak={getHabitCurrentStreak(selectedHabitHistory)}
+          locale={language === "vi" ? "vi-VN" : "en-US"}
+          labels={{
+            historyTitle: t.habits.historyTitle,
+            scheduledFor: t.habits.scheduledFor,
+            totalCompletions: t.habits.totalCompletions,
+            totalMinutes: t.habits.totalMinutes,
+            currentStreak: t.habits.currentStreakLabel,
+            recentActivity: t.habits.recentActivity,
+            lastCompleted: t.habits.lastCompleted,
+            neverCompleted: t.habits.neverCompleted,
+            noHistory: t.habits.noHistory,
+            minutes: t.common.shortMinutes,
+            days: t.common.days,
+            close: t.habits.closeDetails,
+          }}
+          onClose={() => setSelectedHabitDetailId(null)}
+        />
+      )}
+
       <AddHabitSheet
         open={isAdding}
         surfaceClassName={currentTheme.surface}
@@ -1713,6 +2529,8 @@ export default function HomePage() {
         labels={{
           create: t.addHabit.create,
           newHabit: t.addHabit.newHabit,
+          edit: t.addHabit.edit,
+          editHabit: t.addHabit.editHabit,
           titlePlaceholder: t.addHabit.titlePlaceholder,
           minutesPlaceholder: t.addHabit.minutesPlaceholder,
           frequencyDaily: t.habits.daily,
@@ -1721,16 +2539,18 @@ export default function HomePage() {
           chooseWeekDays: t.addHabit.chooseWeekDays,
           chooseMonthDays: t.addHabit.chooseMonthDays,
           createHabit: t.addHabit.createHabit,
+          saveHabit: t.addHabit.saveHabit,
           closeForm: t.addHabit.closeForm,
         }}
-        onClose={() => setIsAdding(false)}
+        isEditing={editingHabitId !== null}
+        onClose={closeHabitSheet}
         onChangeTitle={setNewTitle}
         onChangeMinutes={setNewMinutes}
         onChangeIcon={setNewIcon}
         onChangeFrequency={setNewFrequency}
         onToggleWeekDay={toggleWeekDay}
         onToggleMonthDay={toggleMonthDay}
-        onCreate={addHabit}
+        onSubmit={saveHabit}
       />
 
 
@@ -1862,6 +2682,7 @@ export default function HomePage() {
                   setSelectedMinutes(2);
                   setSelectedHabitTitle(t.focusSessions.tinyTitle);
                   setSelectedSessionType("tiny");
+                  setSelectedHabitFocusId(null);
 
                   setTimeout(() => {
                     setOpenFocus(true);
@@ -1893,7 +2714,11 @@ export default function HomePage() {
         title={selectedHabitTitle}
         onComplete={handleFocusComplete}
         sessionType={selectedSessionType}
-        onClose={() => setOpenFocus(false)}
+        testDurationSeconds={testFocusDurationSeconds}
+        onClose={() => {
+          setOpenFocus(false);
+          setSelectedHabitFocusId(null);
+        }}
         language={language}
       />
     </main>

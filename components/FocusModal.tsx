@@ -45,6 +45,7 @@ interface FocusModalProps {
   autoStart?: boolean;
   sessionType?: string;
   language?: Language;
+  testDurationSeconds?: number;
 }
 
 type AmbientSound = {
@@ -195,8 +196,6 @@ const SESSION_THEMES = {
 
 
 
-type AppThemeType = "midnight" | "forest" | "sunset" | "arctic";
-
 const APP_THEMES = {
   midnight: {
     background: "bg-[#0F1115]",
@@ -273,9 +272,13 @@ export default function FocusModal({
   autoStart = false,
   sessionType = "gentle",
   language = "vi",
+  testDurationSeconds,
 }: FocusModalProps) {
   const text = FOCUS_MODAL_TEXT[language];
-  const totalSeconds = useMemo(() => Math.max(1, minutes) * 60, [minutes]);
+  const totalSeconds = useMemo(
+    () => testDurationSeconds ?? Math.max(1, minutes) * 60,
+    [minutes, testDurationSeconds]
+  );
 
   const [timeLeft, setTimeLeft] = useState(totalSeconds);
   const [isActive, setIsActive] = useState(false);
@@ -314,6 +317,7 @@ export default function FocusModal({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTimeLeft(totalSeconds);
       setIsActive(autoStart);
       setShowCompliment(false);
@@ -371,13 +375,14 @@ export default function FocusModal({
   useEffect(() => {
     if (!open || timeLeft !== 0 || showCompliment || hasCompleted) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsActive(false);
     setHasCompleted(true);
     setCurrentCompliment(getRandomCompliment(language));
     setShowCompliment(true);
     saveCompletedFocusSession(minutes);
     onComplete?.(minutes);
-  }, [open, timeLeft, showCompliment, hasCompleted, minutes, onComplete]);
+  }, [open, timeLeft, showCompliment, hasCompleted, minutes, onComplete, language]);
 
   useEffect(() => {
     const selected = AMBIENT_SOUNDS.find((sound) => sound.id === selectedSound);
@@ -462,7 +467,7 @@ export default function FocusModal({
 
   return (
     <AnimatePresence mode="wait">
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+      <div key="focus-modal-root" className="fixed inset-0 z-[100] flex items-center justify-center p-6">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -646,6 +651,7 @@ export default function FocusModal({
           <AnimatePresence>
             {showCompliment && (
               <motion.div
+                key="focus-completion"
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -680,9 +686,10 @@ export default function FocusModal({
               </motion.div>
             )}
   
-          <AnimatePresence>
+          <AnimatePresence key="focus-close-confirm-presence">
             {showCloseConfirm && (
               <motion.div
+                key="focus-close-confirm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
