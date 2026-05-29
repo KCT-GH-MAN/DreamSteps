@@ -34,8 +34,8 @@ function SmartFocusCard({
   onStartSuggested,
 }: SmartFocusCardProps) {
   return (
-    <section className="mt-6">
-      <div className="mb-4 flex items-center justify-between">
+    <section className="mt-5 sm:mt-6">
+      <div className="mb-3 flex items-center justify-between sm:mb-4">
         <h3 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">
           {title}
         </h3>
@@ -45,7 +45,7 @@ function SmartFocusCard({
         whileTap={{ scale: 0.98 }}
         type="button"
         onClick={onStartSuggested}
-        className={`w-full rounded-[30px] border ${accentBorderClassName} ${accentBgClassName} p-5 text-left shadow-[0_0_30px_rgba(124,158,255,0.1)] transition-all duration-700`}
+        className={`w-full rounded-[26px] border ${accentBorderClassName} ${accentBgClassName} p-4 text-left shadow-[0_0_30px_rgba(124,158,255,0.1)] transition-all duration-700 sm:rounded-[30px] sm:p-5`}
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -55,7 +55,7 @@ function SmartFocusCard({
               {suggestedLabel}
             </p>
 
-            <h3 className="mt-2 text-xl font-black leading-tight">
+            <h3 className="mt-2 text-lg font-black leading-tight sm:text-xl">
               {suggestedSession.title}
             </h3>
 
@@ -65,7 +65,7 @@ function SmartFocusCard({
           </div>
 
           <div
-            className={`shrink-0 rounded-2xl bg-gradient-to-br ${suggestedSession.accent} px-3.5 py-3 text-sm font-black sm:px-4`}
+            className={`shrink-0 rounded-2xl bg-gradient-to-br ${suggestedSession.accent} px-3 py-2.5 text-xs font-black sm:px-4 sm:py-3 sm:text-sm`}
           >
             {suggestedSession.minutes} {minutesLabel}
           </div>

@@ -1980,17 +1980,17 @@ export default function HomePage() {
 
   return (
     <main
-  className={`min-h-screen ${currentTheme.background} text-white px-4 py-5 sm:p-5 font-sans transition-colors duration-700`}
+  className={`min-h-screen ${currentTheme.background} px-3 py-3 text-white transition-colors duration-700 sm:p-5 font-sans`}
 >
-  <div className="mx-auto w-full max-w-md md:max-w-2xl pb-32">
-        <header className="flex justify-between items-start pt-8">
+  <div className="mx-auto w-full max-w-md pb-[calc(9rem+env(safe-area-inset-bottom))] md:max-w-2xl">
+        <header className="flex items-start justify-between pt-4 sm:pt-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             {activeTab === "home" && (
   <p className="text-gray-500 text-xs font-bold tracking-[0.2em] uppercase">
     {greeting}
   </p>
 )}
-            <h1 className="text-4xl font-black mt-1">
+            <h1 className="mt-1 text-3xl font-black sm:text-4xl">
               {activeTab === "home" ? t.common.appName : t.common.stats}
             </h1>
           </motion.div>
@@ -2001,7 +2001,7 @@ export default function HomePage() {
               type="button"
               aria-label={t.common.changeLanguage}
               onClick={toggleLanguage}
-              className="rounded-2xl border border-white/5 bg-white/5 px-3.5 py-3 text-[11px] font-black uppercase tracking-[0.18em] text-gray-300 transition-colors hover:bg-white/10"
+              className="rounded-2xl border border-white/5 bg-white/5 px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] text-gray-300 transition-colors hover:bg-white/10 sm:px-3.5 sm:py-3"
             >
               <Image
                 src={language === "vi" ? "/flags/vn.svg" : "/flags/us.svg"}
@@ -2017,7 +2017,7 @@ export default function HomePage() {
                 type="button"
                 aria-label={t.header.addHabit}
                 onClick={openAddHabitSheet}
-                className="bg-white/5 p-3.5 rounded-2xl border border-white/5 shadow-lg hover:bg-white/10 transition-colors"
+                className="rounded-2xl border border-white/5 bg-white/5 p-3 shadow-lg transition-colors hover:bg-white/10 sm:p-3.5"
               >
                 <Plus size={24} strokeWidth={2.5} />
               </button>
@@ -2035,16 +2035,16 @@ export default function HomePage() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.16 }}
             >
-              <div className={`sticky top-0 z-40 -mx-5 mt-4 ${currentTheme.background} px-5 py-4 transition-colors duration-700 will-change-auto`}>
+              <div className={`sticky top-0 z-40 -mx-3 mt-3 ${currentTheme.background} px-3 py-2 transition-colors duration-700 will-change-auto sm:-mx-5 sm:mt-4 sm:px-5 sm:py-4`}>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`rounded-[35px] bg-gradient-to-br ${currentTheme.primaryGradient} p-8 flex justify-between items-center ${currentTheme.primaryShadow} transition-all duration-700`}
+                  className={`flex items-center justify-between rounded-[28px] bg-gradient-to-br ${currentTheme.primaryGradient} p-5 ${currentTheme.primaryShadow} transition-all duration-700 sm:rounded-[35px] sm:p-8`}
                 >
                 <div>
-                  <h2 className="text-5xl font-black italic tracking-tighter">
+                  <h2 className="text-4xl font-black italic tracking-tighter sm:text-5xl">
                     <AnimatedCounter value={momentum} />
-                    <span className="text-lg font-medium ml-2 opacity-80">{t.common.shortMinutes}</span>
+                    <span className="ml-2 text-base font-medium opacity-80 sm:text-lg">{t.common.shortMinutes}</span>
                   </h2>
 
                   <motion.div
@@ -2052,13 +2052,13 @@ export default function HomePage() {
                     initial={{ scale: 0.92, opacity: 0.7 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                    className="mt-4 bg-white/20 px-4 py-1.5 rounded-full text-xs font-black uppercase inline-block shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                    className="mt-3 inline-block rounded-full bg-white/20 px-3 py-1.5 text-[11px] font-black uppercase shadow-[0_0_20px_rgba(255,255,255,0.15)] sm:mt-4 sm:px-4 sm:text-xs"
                   >
                     🔥 <AnimatedCounter value={streak} /> Day Streak
                   </motion.div>
                 </div>
 
-                <div className="relative h-16 w-16 rounded-[22px] bg-white/20 flex items-center justify-center overflow-hidden">
+                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-white/20 sm:h-16 sm:w-16 sm:rounded-[22px]">
                   <motion.div
                     animate={{
                       opacity: [0.2, 0.45, 0.2],
@@ -2146,8 +2146,8 @@ export default function HomePage() {
                 </div>
               )}
 
-              <section className="mt-12">
-                <div className="mb-6 flex items-center justify-between">
+              <section className="mt-8 sm:mt-12">
+                <div className="mb-4 flex items-center justify-between sm:mb-6">
                   <h3 className="text-xl font-black">{t.habits.today}</h3>
                   <div className="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-gray-500">
                     {todayHabits.filter((habit) => habit.completed).length}/{todayHabits.length}
