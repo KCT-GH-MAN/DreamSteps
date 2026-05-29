@@ -73,18 +73,34 @@ function getPayload(language: "vi" | "en", type: "morning" | "evening" | "reenga
   const bodyByType =
     language === "vi"
       ? {
-          morning: "6h roi. Mo DreamSteps de xem cac thoi quen can duy tri hom nay.",
-          evening: "21h roi. Danh vai phut nhin lai ngay hom nay trong DreamSteps.",
-          reengage: "Da vai ngay roi ban chua mo DreamSteps. Quay lai tiep tuc duy tri thoi quen nhe.",
+          morning: "🌅 Hãy bắt đầu 1 ngày mới bằng việc duy trì những thói quen tốt.",
+          evening:
+            "🌙 Hãy chậm lại 1 nhịp để nhìn lại 1 ngày đã trôi qua, để chuẩn bị cho ngày mai tốt đẹp hơn.",
+          reengage:
+            "✨ Đã vài ngày rồi bạn chưa mở ứng dụng DreamSteps. Đừng để các thói quen trở thành ký ức.",
         }
       : {
-          morning: "It is 6 AM. Open DreamSteps to review today's habits.",
-          evening: "It is 9 PM. Take a minute to reflect on your day in DreamSteps.",
-          reengage: "It has been a few days. Come back to DreamSteps and continue your habits.",
+          morning: "🌅 Start a new day by keeping your good habits alive.",
+          evening:
+            "🌙 Slow down for a moment to reflect on the day that has passed, so tomorrow can be better.",
+          reengage:
+            "✨ It has been a few days since you opened DreamSteps. Do not let your habits become memories.",
+        };
+  const titleByType =
+    language === "vi"
+      ? {
+          morning: "DreamSteps - Khởi động ngày mới",
+          evening: "DreamSteps - Nhìn lại hôm nay",
+          reengage: "DreamSteps - Quay lại nhé",
+        }
+      : {
+          morning: "DreamSteps - Start Your Day",
+          evening: "DreamSteps - Evening Review",
+          reengage: "DreamSteps - Come Back",
         };
 
   return JSON.stringify({
-    title: "DreamSteps",
+    title: titleByType[type],
     body: bodyByType[type],
     url: "/",
   });
