@@ -127,18 +127,18 @@ export default function AddHabitSheet<IconName extends string>({
                 onClose();
               }
             }}
-            className={`relative ${surfaceClassName} h-[min(96dvh,820px)] max-h-[96dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[38px] border-t border-white/10 px-5 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_-20px_80px_rgba(0,0,0,0.45)] sm:px-6 md:max-w-xl`}
+            className={`relative ${surfaceClassName} max-h-[calc(100dvh-1rem)] w-full max-w-md overflow-hidden rounded-t-[34px] border-t border-white/10 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 shadow-[0_-20px_80px_rgba(0,0,0,0.45)] sm:px-6 md:max-w-xl`}
           >
-            <div className="mb-5 flex justify-center">
+            <div className="mb-4 flex justify-center">
               <div className="h-1.5 w-14 rounded-full bg-white/10" />
             </div>
 
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">
                   {isEditing ? labels.edit : labels.create}
                 </p>
-                <h2 className="mt-1 text-2xl font-black">
+                <h2 className="mt-1 text-[22px] font-black leading-tight sm:text-2xl">
                   {isEditing ? labels.editHabit : labels.newHabit}
                 </h2>
               </div>
@@ -147,14 +147,14 @@ export default function AddHabitSheet<IconName extends string>({
                 type="button"
                 aria-label={labels.closeForm}
                 onClick={onClose}
-                className="h-11 w-11 bg-white/5 rounded-full hover:bg-white/10 transition-colors flex items-center justify-center"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 transition-colors hover:bg-white/10"
               >
                 <X size={18} />
               </button>
             </div>
 
             <input
-              className="mb-3 h-[52px] w-full rounded-2xl bg-white/5 px-5 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#7C9EFF] sm:h-14"
+              className="mb-3 h-12 w-full rounded-2xl bg-white/5 px-5 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#7C9EFF] sm:h-[52px]"
               placeholder={labels.titlePlaceholder}
               value={newTitle}
               onChange={(event) => onChangeTitle(event.target.value)}
@@ -163,13 +163,13 @@ export default function AddHabitSheet<IconName extends string>({
             <input
               type="number"
               min={1}
-              className="mb-5 h-[52px] w-full rounded-2xl bg-white/5 px-5 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#7C9EFF] sm:mb-7 sm:h-14"
+              className="mb-4 h-12 w-full rounded-2xl bg-white/5 px-5 text-[15px] [appearance:textfield] focus:outline-none focus:ring-2 focus:ring-[#7C9EFF] sm:h-[52px] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               placeholder={labels.minutesPlaceholder}
               value={newMinutes}
               onChange={(event) => onChangeMinutes(event.target.value)}
             />
 
-            <div className="mb-5 grid grid-cols-3 gap-2 rounded-2xl bg-white/5 p-1 sm:mb-6">
+            <div className="mb-4 grid grid-cols-3 gap-2 rounded-2xl bg-white/5 p-1">
               {[
                 { value: "daily", label: labels.frequencyDaily },
                 { value: "weekly", label: labels.frequencyWeekly },
@@ -190,7 +190,7 @@ export default function AddHabitSheet<IconName extends string>({
               ))}
             </div>
 
-            <div className="mb-5 min-h-[132px] sm:mb-6">
+            <div className="mb-4 min-h-[128px]">
               {newFrequency === "weekly" && (
                 <>
                   <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-gray-500">
@@ -202,7 +202,7 @@ export default function AddHabitSheet<IconName extends string>({
                         key={day.value}
                         type="button"
                         onClick={() => onToggleWeekDay(day.value)}
-                        className={`rounded-xl py-2.5 text-xs font-black transition-all sm:py-3 ${
+                        className={`h-10 rounded-xl text-xs font-black transition-all ${
                           newDaysOfWeek.includes(day.value)
                             ? "bg-[#7C9EFF] text-white"
                             : "bg-white/5 text-gray-500"
@@ -225,12 +225,12 @@ export default function AddHabitSheet<IconName extends string>({
                       type="button"
                       aria-label="Previous month day"
                       onClick={() => changeMonthDay(-1)}
-                      className="flex h-[56px] items-center justify-center rounded-2xl bg-white/5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                      className="flex h-12 items-center justify-center rounded-2xl bg-white/5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white sm:h-[52px]"
                     >
                       <ChevronLeft size={20} />
                     </button>
 
-                    <div className="flex h-[56px] items-center justify-center rounded-2xl border border-[#7C9EFF]/35 bg-[#7C9EFF]/15 px-4 text-center text-2xl font-black leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                    <div className="flex h-12 items-center justify-center rounded-2xl border border-[#7C9EFF]/35 bg-[#7C9EFF]/15 px-4 text-center text-2xl font-black leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:h-[52px]">
                       {selectedMonthDay}
                     </div>
 
@@ -238,12 +238,12 @@ export default function AddHabitSheet<IconName extends string>({
                       type="button"
                       aria-label="Next month day"
                       onClick={() => changeMonthDay(1)}
-                      className="flex h-[56px] items-center justify-center rounded-2xl bg-white/5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                      className="flex h-12 items-center justify-center rounded-2xl bg-white/5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white sm:h-[52px]"
                     >
                       <ChevronRight size={20} />
                     </button>
                   </div>
-                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                  <div className="mt-2 flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
                     {nearbyMonthDays.map((day) => (
                       <button
                         key={day}
@@ -264,7 +264,7 @@ export default function AddHabitSheet<IconName extends string>({
               )}
             </div>
 
-            <div className="mb-24 grid grid-cols-6 gap-2 sm:gap-3">
+            <div className="grid grid-cols-6 gap-2 sm:gap-3">
               {(Object.keys(iconMap) as IconName[]).map((key) => {
                 const Icon = iconMap[key] as ComponentType<{ size?: number; className?: string }>;
 
@@ -274,7 +274,7 @@ export default function AddHabitSheet<IconName extends string>({
                     type="button"
                     aria-label={`Chọn icon ${key}`}
                     onClick={() => onChangeIcon(key)}
-                    className={`flex aspect-square items-center justify-center rounded-xl transition-all ${
+                    className={`flex h-14 items-center justify-center rounded-xl transition-all sm:h-[60px] ${
                       newIcon === key
                         ? "bg-[#7C9EFF] text-white"
                         : "bg-white/5 text-gray-500"
@@ -286,15 +286,13 @@ export default function AddHabitSheet<IconName extends string>({
               })}
             </div>
 
-            <div className={`sticky bottom-0 z-10 -mx-5 ${surfaceClassName} px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 sm:-mx-6 sm:px-6`}>
-              <button
-                type="button"
-                onClick={onSubmit}
-                className="w-full rounded-[20px] bg-[#7C9EFF] py-4 text-base font-black tracking-wide shadow-[0_10px_30px_rgba(124,158,255,0.3)] transition-all hover:brightness-110 active:scale-[0.99]"
-              >
-                {isEditing ? labels.saveHabit : labels.createHabit}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onSubmit}
+              className="mt-5 w-full rounded-[20px] bg-[#7C9EFF] py-4 text-base font-black tracking-wide shadow-[0_10px_30px_rgba(124,158,255,0.3)] transition-all hover:brightness-110 active:scale-[0.99]"
+            >
+              {isEditing ? labels.saveHabit : labels.createHabit}
+            </button>
           </motion.div>
         </div>
       )}
