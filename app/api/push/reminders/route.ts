@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { listSubscriptions, markSubscriptionSent, removeSubscription } from "@/lib/pushStore";
+import {
+  listSubscriptions,
+  markSubscriptionNotificationSent,
+  removeSubscription,
+} from "@/lib/pushStore";
 import { configureWebPush } from "@/lib/pushServer";
 
 export const runtime = "nodejs";
@@ -23,13 +27,44 @@ function getLocalDateParts(timezone: string) {
   };
 }
 
-function getPayload(language: "vi" | "en") {
+function getLocalDate(timezone: string, value: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function getDaysBetween(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T00:00:00Z`).getTime();
+  const end = new Date(`${endDate}T00:00:00Z`).getTime();
+
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
+
+  return Math.floor((end - start) / 86_400_000);
+}
+
+function getPayload(language: "vi" | "en", type: "morning" | "evening" | "reengage") {
+  const bodyByType =
+    language === "vi"
+      ? {
+          morning: "6h roi. Mo DreamSteps de xem cac thoi quen can duy tri hom nay.",
+          evening: "21h roi. Danh vai phut nhin lai ngay hom nay trong DreamSteps.",
+          reengage: "Da vai ngay roi ban chua mo DreamSteps. Quay lai tiep tuc duy tri thoi quen nhe.",
+        }
+      : {
+          morning: "It is 6 AM. Open DreamSteps to review today's habits.",
+          evening: "It is 9 PM. Take a minute to reflect on your day in DreamSteps.",
+          reengage: "It has been a few days. Come back to DreamSteps and continue your habits.",
+        };
+
   return JSON.stringify({
     title: "DreamSteps",
-    body:
-      language === "vi"
-        ? "Den gio nhac DreamSteps. Mo app de hoan thanh mot buoc nho hom nay."
-        : "One small step today still counts. Open DreamSteps.",
+    body: bodyByType[type],
     url: "/",
   });
 }
@@ -46,15 +81,36 @@ async function handleReminderRun() {
   await Promise.all(
     subscriptions.map(async (item) => {
       const local = getLocalDateParts(item.timezone);
+      const lastSeenDate = getLocalDate(item.timezone, new Date(item.lastSeenAt));
+      const reengageDue =
+        getDaysBetween(lastSeenDate, local.date) >= item.reengageAfterDays &&
+        item.lastReengageSentDate !== local.date;
+      const dueNotifications: Array<"morning" | "evening" | "reengage"> = [];
 
-      if (item.lastSentDate === local.date || local.time < item.reminderTime) {
-        return;
+      if (
+        item.lastMorningSentDate !== local.date &&
+        local.time >= item.morningReminderTime
+      ) {
+        dueNotifications.push("morning");
+      }
+
+      if (
+        item.lastEveningSentDate !== local.date &&
+        local.time >= item.eveningReflectionTime
+      ) {
+        dueNotifications.push("evening");
+      }
+
+      if (reengageDue) {
+        dueNotifications.push("reengage");
       }
 
       try {
-        await webpush.sendNotification(item.subscription, getPayload(item.language));
-        await markSubscriptionSent(item.endpoint, local.date);
-        sent += 1;
+        for (const type of dueNotifications) {
+          await webpush.sendNotification(item.subscription, getPayload(item.language, type));
+          await markSubscriptionNotificationSent(item.endpoint, type, local.date);
+          sent += 1;
+        }
       } catch (error) {
         const statusCode =
           typeof error === "object" &&

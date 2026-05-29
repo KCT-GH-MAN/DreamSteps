@@ -216,7 +216,12 @@ type DreamStepsBackup = {
 type ReminderSettings = {
   enabled: boolean;
   time: string;
+  morningTime: string;
+  eveningTime: string;
+  reengageAfterDays: number;
   lastSentDate: string | null;
+  lastMorningSentDate: string | null;
+  lastEveningSentDate: string | null;
 };
 
 type TimelineEntry = {
@@ -307,8 +312,13 @@ const STORAGE_KEYS = {
 const BACKUP_PREFIX = "ds-";
 const DEFAULT_REMINDER_SETTINGS: ReminderSettings = {
   enabled: false,
-  time: "20:00",
+  time: "21:00",
+  morningTime: "06:00",
+  eveningTime: "21:00",
+  reengageAfterDays: 3,
   lastSentDate: null,
+  lastMorningSentDate: null,
+  lastEveningSentDate: null,
 };
 
 function isValidReminderTime(value: string) {
@@ -692,8 +702,37 @@ function getReminderSettings(): ReminderSettings {
         typeof parsed.time === "string" && isValidReminderTime(parsed.time)
           ? parsed.time
           : DEFAULT_REMINDER_SETTINGS.time,
+      morningTime:
+        typeof parsed.morningTime === "string" &&
+        isValidReminderTime(parsed.morningTime)
+          ? parsed.morningTime
+          : DEFAULT_REMINDER_SETTINGS.morningTime,
+      eveningTime:
+        typeof parsed.eveningTime === "string" &&
+        isValidReminderTime(parsed.eveningTime)
+          ? parsed.eveningTime
+          : typeof parsed.time === "string" && isValidReminderTime(parsed.time)
+            ? parsed.time
+            : DEFAULT_REMINDER_SETTINGS.eveningTime,
+      reengageAfterDays:
+        typeof parsed.reengageAfterDays === "number" &&
+        Number.isInteger(parsed.reengageAfterDays) &&
+        parsed.reengageAfterDays >= 1 &&
+        parsed.reengageAfterDays <= 30
+          ? parsed.reengageAfterDays
+          : DEFAULT_REMINDER_SETTINGS.reengageAfterDays,
       lastSentDate:
         typeof parsed.lastSentDate === "string" ? parsed.lastSentDate : null,
+      lastMorningSentDate:
+        typeof parsed.lastMorningSentDate === "string"
+          ? parsed.lastMorningSentDate
+          : null,
+      lastEveningSentDate:
+        typeof parsed.lastEveningSentDate === "string"
+          ? parsed.lastEveningSentDate
+          : typeof parsed.lastSentDate === "string"
+            ? parsed.lastSentDate
+            : null,
     };
   } catch {
     return DEFAULT_REMINDER_SETTINGS;
@@ -1650,7 +1689,7 @@ export default function HomePage() {
     });
   };
 
-  async function registerPushReminder(reminderTime = reminderSettings.time) {
+  async function registerPushReminder(settings = reminderSettings) {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       setReminderStatus(t.stats.reminderPushUnsupported);
       return false;
@@ -1682,7 +1721,10 @@ export default function HomePage() {
         },
         body: JSON.stringify({
           subscription: subscription.toJSON(),
-          reminderTime,
+          reminderTime: settings.eveningTime,
+          morningReminderTime: settings.morningTime,
+          eveningReflectionTime: settings.eveningTime,
+          reengageAfterDays: settings.reengageAfterDays,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           language,
         }),
@@ -1720,35 +1762,83 @@ export default function HomePage() {
     }
   }
 
+  async function touchPushSubscription() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) return;
+
+      await fetch("/api/push/touch", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          endpoint: subscription.endpoint,
+        }),
+      });
+    } catch {
+      // The foreground reminder still works if the background touch fails.
+    }
+  }
+
+  useEffect(() => {
+    if (!mounted || !isLoaded || !reminderSettings.enabled) return;
+
+    void touchPushSubscription();
+  }, [mounted, isLoaded, reminderSettings.enabled]);
+
   useEffect(() => {
     if (!mounted || !isLoaded || !reminderSettings.enabled) return;
 
     const checkReminder = () => {
       const pendingHabits = todayHabits.filter((habit) => !habit.completed);
 
-      if (pendingHabits.length === 0) return;
-
       const today = getTodayStr();
-      if (reminderSettings.lastSentDate === today) return;
 
       const now = new Date();
       const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(
         now.getMinutes()
       ).padStart(2, "0")}`;
 
-      if (currentTime < reminderSettings.time) return;
+      if (
+        pendingHabits.length > 0 &&
+        reminderSettings.lastMorningSentDate !== today &&
+        currentTime >= reminderSettings.morningTime
+      ) {
+        void showBrowserReminderNotification({
+          pendingCount: pendingHabits.length,
+          labels: t.stats,
+          setStatus: setReminderStatus,
+        }).then((didShow) => {
+          if (!didShow) return;
 
-      void showBrowserReminderNotification({
-        pendingCount: pendingHabits.length,
-        labels: t.stats,
-        setStatus: setReminderStatus,
-      }).then((didShow) => {
-        if (!didShow) return;
-
-        updateReminderSettings({
-          lastSentDate: today,
+          updateReminderSettings({
+            lastMorningSentDate: today,
+          });
         });
-      });
+      }
+
+      if (
+        reminderSettings.lastEveningSentDate !== today &&
+        currentTime >= reminderSettings.eveningTime
+      ) {
+        void showBrowserReminderNotification({
+          pendingCount: Math.max(1, pendingHabits.length),
+          labels: t.stats,
+          setStatus: setReminderStatus,
+        }).then((didShow) => {
+          if (!didShow) return;
+
+          updateReminderSettings({
+            lastSentDate: today,
+            lastEveningSentDate: today,
+          });
+        });
+      }
     };
 
     checkReminder();
@@ -1761,8 +1851,10 @@ export default function HomePage() {
     mounted,
     isLoaded,
     reminderSettings.enabled,
-    reminderSettings.time,
-    reminderSettings.lastSentDate,
+    reminderSettings.morningTime,
+    reminderSettings.eveningTime,
+    reminderSettings.lastMorningSentDate,
+    reminderSettings.lastEveningSentDate,
     todayHabits,
     t.stats,
   ]);
@@ -2275,51 +2367,108 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-[1fr_auto] gap-3">
+                <div className="mt-5 grid gap-3 md:grid-cols-3">
                   <label className="block">
                     <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-gray-500">
-                      {t.stats.reminderTime}
+                      {t.stats.morningReminderTime}
                     </span>
                     <input
                       type="time"
-                      value={reminderSettings.time}
+                      value={reminderSettings.morningTime}
                       onChange={(event) => {
                         const nextTime = event.target.value;
-                        updateReminderSettings({
-                          time: nextTime,
-                          lastSentDate: null,
-                        });
+                        const nextSettings = {
+                          ...reminderSettings,
+                          morningTime: nextTime,
+                          lastMorningSentDate: null,
+                        };
+
+                        updateReminderSettings(nextSettings);
 
                         if (reminderSettings.enabled) {
-                          void registerPushReminder(nextTime);
+                          void registerPushReminder(nextSettings);
                         }
                       }}
                       className="h-12 w-full rounded-2xl border border-white/5 bg-white/5 px-4 text-sm font-black text-white outline-none focus:ring-2 focus:ring-[#7C9EFF]"
                     />
                   </label>
 
-                  <div className="flex items-end">
-                    <button
-                      type="button"
-                      onClick={
-                        reminderSettings.enabled
-                          ? disableReminders
-                          : () => void enableReminders()
-                      }
-                      className={`h-12 rounded-2xl px-4 text-sm font-black transition-colors ${
-                        reminderSettings.enabled
-                          ? "bg-white/5 text-gray-300 hover:bg-white/10"
-                          : "bg-[#7EE2B8] text-black hover:brightness-110"
-                      }`}
-                    >
-                      {reminderSettings.enabled
-                        ? t.stats.disableReminder
-                        : t.stats.enableReminder}
-                    </button>
-                  </div>
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                      {t.stats.eveningReminderTime}
+                    </span>
+                    <input
+                      type="time"
+                      value={reminderSettings.eveningTime}
+                      onChange={(event) => {
+                        const nextTime = event.target.value;
+                        const nextSettings = {
+                          ...reminderSettings,
+                          time: nextTime,
+                          eveningTime: nextTime,
+                          lastSentDate: null,
+                          lastEveningSentDate: null,
+                        };
+
+                        updateReminderSettings(nextSettings);
+
+                        if (reminderSettings.enabled) {
+                          void registerPushReminder(nextSettings);
+                        }
+                      }}
+                      className="h-12 w-full rounded-2xl border border-white/5 bg-white/5 px-4 text-sm font-black text-white outline-none focus:ring-2 focus:ring-[#7C9EFF]"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-gray-500">
+                      {t.stats.reengageAfterDays}
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={30}
+                      value={reminderSettings.reengageAfterDays}
+                      onChange={(event) => {
+                        const nextDays = Number(event.target.value);
+                        const nextSettings = {
+                          ...reminderSettings,
+                          reengageAfterDays:
+                            Number.isInteger(nextDays) && nextDays >= 1 && nextDays <= 30
+                              ? nextDays
+                              : DEFAULT_REMINDER_SETTINGS.reengageAfterDays,
+                        };
+
+                        updateReminderSettings(nextSettings);
+
+                        if (reminderSettings.enabled) {
+                          void registerPushReminder(nextSettings);
+                        }
+                      }}
+                      className="h-12 w-full rounded-2xl border border-white/5 bg-white/5 px-4 text-sm font-black text-white outline-none focus:ring-2 focus:ring-[#7C9EFF]"
+                    />
+                  </label>
                 </div>
 
-                <div className="mt-3 flex justify-end">
+                <div className="mt-3 flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={
+                      reminderSettings.enabled
+                        ? disableReminders
+                        : () => void enableReminders()
+                    }
+                    className={`h-12 rounded-2xl px-4 text-sm font-black transition-colors ${
+                      reminderSettings.enabled
+                        ? "bg-white/5 text-gray-300 hover:bg-white/10"
+                        : "bg-[#7EE2B8] text-black hover:brightness-110"
+                    }`}
+                  >
+                    {reminderSettings.enabled
+                      ? t.stats.disableReminder
+                      : t.stats.enableReminder}
+                  </button>
+
                   <button
                     type="button"
                     onClick={sendTestReminder}

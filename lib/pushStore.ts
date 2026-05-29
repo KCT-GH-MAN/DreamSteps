@@ -6,9 +6,16 @@ export type StoredPushSubscription = {
   endpoint: string;
   subscription: webpush.PushSubscription;
   reminderTime: string;
+  morningReminderTime: string;
+  eveningReflectionTime: string;
+  reengageAfterDays: number;
   timezone: string;
   language: "vi" | "en";
   lastSentDate: string | null;
+  lastMorningSentDate: string | null;
+  lastEveningSentDate: string | null;
+  lastReengageSentDate: string | null;
+  lastSeenAt: string;
   updatedAt: string;
 };
 
@@ -16,9 +23,16 @@ type PushSubscriptionRow = {
   endpoint: string;
   subscription: webpush.PushSubscription;
   reminder_time: string;
+  morning_reminder_time: string | null;
+  evening_reflection_time: string | null;
+  reengage_after_days: number | null;
   timezone: string;
   language: "vi" | "en";
   last_sent_date: string | null;
+  last_morning_sent_date: string | null;
+  last_evening_sent_date: string | null;
+  last_reengage_sent_date: string | null;
+  last_seen_at: string | null;
   updated_at: string;
 };
 
@@ -47,9 +61,16 @@ function toStoredSubscription(row: PushSubscriptionRow): StoredPushSubscription 
     endpoint: row.endpoint,
     subscription: row.subscription,
     reminderTime: row.reminder_time,
+    morningReminderTime: row.morning_reminder_time ?? "06:00",
+    eveningReflectionTime: row.evening_reflection_time ?? row.reminder_time ?? "21:00",
+    reengageAfterDays: row.reengage_after_days ?? 3,
     timezone: row.timezone,
     language: row.language,
     lastSentDate: row.last_sent_date,
+    lastMorningSentDate: row.last_morning_sent_date,
+    lastEveningSentDate: row.last_evening_sent_date ?? row.last_sent_date,
+    lastReengageSentDate: row.last_reengage_sent_date,
+    lastSeenAt: row.last_seen_at ?? row.updated_at,
     updatedAt: row.updated_at,
   };
 }
@@ -61,9 +82,16 @@ function toSupabaseRow(
     endpoint: item.subscription.endpoint,
     subscription: item.subscription,
     reminder_time: item.reminderTime,
+    morning_reminder_time: item.morningReminderTime,
+    evening_reflection_time: item.eveningReflectionTime,
+    reengage_after_days: item.reengageAfterDays,
     timezone: item.timezone,
     language: item.language,
     last_sent_date: item.lastSentDate,
+    last_morning_sent_date: item.lastMorningSentDate,
+    last_evening_sent_date: item.lastEveningSentDate,
+    last_reengage_sent_date: item.lastReengageSentDate,
+    last_seen_at: item.lastSeenAt,
     updated_at: new Date().toISOString(),
   };
 }
@@ -107,6 +135,9 @@ async function readFileStore(): Promise<StoredPushSubscription[]> {
         item.subscription &&
         typeof item.subscription.endpoint === "string" &&
         typeof item.reminderTime === "string" &&
+        typeof item.morningReminderTime === "string" &&
+        typeof item.eveningReflectionTime === "string" &&
+        typeof item.reengageAfterDays === "number" &&
         typeof item.timezone === "string" &&
         (item.language === "vi" || item.language === "en")
       );
@@ -186,7 +217,7 @@ export async function listSubscriptions() {
   }
 
   const response = await supabaseRequest(
-    "?select=endpoint,subscription,reminder_time,timezone,language,last_sent_date,updated_at",
+    "?select=endpoint,subscription,reminder_time,morning_reminder_time,evening_reflection_time,reengage_after_days,timezone,language,last_sent_date,last_morning_sent_date,last_evening_sent_date,last_reengage_sent_date,last_seen_at,updated_at",
     {
       method: "GET",
     }
@@ -197,6 +228,25 @@ export async function listSubscriptions() {
 }
 
 export async function markSubscriptionSent(endpoint: string, date: string) {
+  return markSubscriptionNotificationSent(endpoint, "evening", date);
+}
+
+export async function markSubscriptionNotificationSent(
+  endpoint: string,
+  type: "morning" | "evening" | "reengage",
+  date: string
+) {
+  const dateFieldByType = {
+    morning: "lastMorningSentDate",
+    evening: "lastEveningSentDate",
+    reengage: "lastReengageSentDate",
+  } as const;
+  const dbDateFieldByType = {
+    morning: "last_morning_sent_date",
+    evening: "last_evening_sent_date",
+    reengage: "last_reengage_sent_date",
+  } as const;
+
   if (!getSupabaseConfig()) {
     const items = await readFileStore();
 
@@ -205,7 +255,8 @@ export async function markSubscriptionSent(endpoint: string, date: string) {
         item.endpoint === endpoint
           ? {
               ...item,
-              lastSentDate: date,
+              [dateFieldByType[type]]: date,
+              lastSentDate: type === "evening" ? date : item.lastSentDate,
               updatedAt: new Date().toISOString(),
             }
           : item
@@ -217,8 +268,38 @@ export async function markSubscriptionSent(endpoint: string, date: string) {
   await supabaseRequest(`?endpoint=eq.${encodeURIComponent(endpoint)}`, {
     method: "PATCH",
     body: JSON.stringify({
-      last_sent_date: date,
+      [dbDateFieldByType[type]]: date,
+      ...(type === "evening" ? { last_sent_date: date } : {}),
       updated_at: new Date().toISOString(),
+    }),
+  });
+}
+
+export async function markSubscriptionSeen(endpoint: string) {
+  const now = new Date().toISOString();
+
+  if (!getSupabaseConfig()) {
+    const items = await readFileStore();
+
+    await writeFileStore(
+      items.map((item) =>
+        item.endpoint === endpoint
+          ? {
+              ...item,
+              lastSeenAt: now,
+              updatedAt: now,
+            }
+          : item
+      )
+    );
+    return;
+  }
+
+  await supabaseRequest(`?endpoint=eq.${encodeURIComponent(endpoint)}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      last_seen_at: now,
+      updated_at: now,
     }),
   });
 }

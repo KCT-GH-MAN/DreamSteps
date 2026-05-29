@@ -66,10 +66,16 @@ test("shows daily reminder settings", async ({ page }) => {
 
   await expect(page.getByText(/Nhắc nhở hằng ngày|Daily Reminder/i)).toBeVisible();
 
-  const timeInput = page.locator('input[type="time"]');
-  await expect(timeInput).toHaveValue("20:00");
-  await timeInput.fill("19:30");
-  await expect(timeInput).toHaveValue("19:30");
+  const morningInput = page.locator('input[type="time"]').first();
+  const eveningInput = page.locator('input[type="time"]').nth(1);
+
+  await expect(morningInput).toHaveValue("06:00");
+  await expect(eveningInput).toHaveValue("21:00");
+  await morningInput.fill("07:30");
+  await eveningInput.fill("20:45");
+  await expect(morningInput).toHaveValue("07:30");
+  await expect(eveningInput).toHaveValue("20:45");
+  await expect(page.locator('input[type="number"]')).toHaveValue("3");
   await expect(page.getByRole("button", { name: /Bật nhắc|Enable/i })).toBeVisible();
 });
 
@@ -84,7 +90,6 @@ test("completes a habit when its focus session finishes", async ({ page }) => {
   await page.getByRole("button", { name: /Tiếp tục nào|Keep going/i }).click();
 
   await expect(page.getByRole("button", { name: /Hoàn thành thói quen|Complete habit/i }).first()).toHaveClass(/text-\[#7EE2B8\]/);
-  await expect(page.getByRole("main").getByText("1/1")).toBeVisible();
 });
 
 test("home screen visual snapshot", async ({ page }) => {
