@@ -1704,6 +1704,22 @@ export default function HomePage() {
     setBackupStatus(t.stats.backupImported);
   };
 
+  const deleteLocalData = () => {
+    const shouldDelete = window.confirm(t.stats.backupDeleteConfirm);
+    if (!shouldDelete) return;
+
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+
+      if (key?.startsWith(BACKUP_PREFIX)) {
+        localStorage.removeItem(key);
+      }
+    }
+
+    refreshAppData();
+    setBackupStatus(t.stats.backupDeleted);
+  };
+
   const updateReminderSettings = (updates: Partial<ReminderSettings>) => {
     setReminderSettings((current) => {
       const next = {
@@ -2373,64 +2389,6 @@ export default function HomePage() {
 
               <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
                 <div className="flex items-start gap-3">
-                  <div className="rounded-2xl bg-white/5 p-3 text-[#AFC2FF]">
-                    <DatabaseBackup size={20} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
-                      {t.stats.backupTitle}
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-400">
-                      {t.stats.backupSubtitle}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={exportBackup}
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-white/5 px-4 py-3.5 text-sm font-black transition-colors hover:bg-white/10"
-                  >
-                    <Download size={16} />
-                    {t.stats.exportBackup}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => backupInputRef.current?.click()}
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-[#7C9EFF]/15 px-4 py-3.5 text-sm font-black text-[#AFC2FF] transition-colors hover:bg-[#7C9EFF]/20"
-                  >
-                    <Upload size={16} />
-                    {t.stats.importBackup}
-                  </button>
-                </div>
-
-                <input
-                  ref={backupInputRef}
-                  type="file"
-                  accept="application/json,.json"
-                  className="hidden"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    event.target.value = "";
-
-                    if (file) {
-                      void importBackupFile(file);
-                    }
-                  }}
-                />
-
-                {backupStatus && (
-                  <p className="mt-4 rounded-2xl bg-white/5 px-4 py-3 text-sm font-bold text-gray-300">
-                    {backupStatus}
-                  </p>
-                )}
-              </div>
-
-              <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
-                <div className="flex items-start gap-3">
                   <div className="rounded-2xl bg-white/5 p-3 text-[#7EE2B8]">
                     <Bell size={20} />
                   </div>
@@ -2713,6 +2671,73 @@ export default function HomePage() {
   </motion.div>
 ))}
                   </div>
+                )}
+              </div>
+
+              <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6`}>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl bg-white/5 p-3 text-[#AFC2FF]">
+                    <DatabaseBackup size={20} />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">
+                      {t.stats.backupTitle}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-400">
+                      {t.stats.backupSubtitle}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={exportBackup}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-white/5 px-4 py-3.5 text-sm font-black transition-colors hover:bg-white/10"
+                  >
+                    <Download size={16} />
+                    {t.stats.exportBackup}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => backupInputRef.current?.click()}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-[#7C9EFF]/15 px-4 py-3.5 text-sm font-black text-[#AFC2FF] transition-colors hover:bg-[#7C9EFF]/20"
+                  >
+                    <Upload size={16} />
+                    {t.stats.importBackup}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={deleteLocalData}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-red-500/10 px-4 py-3.5 text-sm font-black text-red-200 transition-colors hover:bg-red-500/15"
+                  >
+                    <Trash2 size={16} />
+                    {t.stats.deleteData}
+                  </button>
+                </div>
+
+                <input
+                  ref={backupInputRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+
+                    if (file) {
+                      void importBackupFile(file);
+                    }
+                  }}
+                />
+
+                {backupStatus && (
+                  <p className="mt-4 rounded-2xl bg-white/5 px-4 py-3 text-sm font-bold text-gray-300">
+                    {backupStatus}
+                  </p>
                 )}
               </div>
             </motion.section>
