@@ -34,8 +34,12 @@ function getPayload(language: "vi" | "en") {
 }
 
 async function handleReminderRun() {
-  const webpush = configureWebPush();
   const subscriptions = await listSubscriptions();
+  if (subscriptions.length === 0) {
+    return 0;
+  }
+
+  const webpush = configureWebPush();
   let sent = 0;
 
   await Promise.all(
@@ -69,6 +73,23 @@ async function handleReminderRun() {
   return sent;
 }
 
+async function runReminderRequest() {
+  try {
+    const sent = await handleReminderRun();
+    return NextResponse.json({ ok: true, sent });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown reminder error";
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error: message,
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
 
@@ -85,8 +106,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const sent = await handleReminderRun();
-  return NextResponse.json({ ok: true, sent });
+  return runReminderRequest();
 }
 
 export async function POST(request: Request) {
@@ -96,6 +116,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const sent = await handleReminderRun();
-  return NextResponse.json({ ok: true, sent });
+  return runReminderRequest();
 }
