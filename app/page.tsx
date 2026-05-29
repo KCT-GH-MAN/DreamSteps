@@ -743,14 +743,70 @@ function saveReminderSettings(settings: ReminderSettings) {
   localStorage.setItem(STORAGE_KEYS.reminderSettings, JSON.stringify(settings));
 }
 
+type BrowserReminderType = "habitCount" | "morning" | "evening";
+
+function getBrowserReminderCopy({
+  language,
+  pendingCount,
+  isTest,
+  labels,
+  reminderType,
+}: {
+  language: Language;
+  pendingCount: number;
+  isTest: boolean;
+  labels: ReturnType<typeof useLanguage>["t"]["stats"];
+  reminderType: BrowserReminderType;
+}) {
+  if (isTest) {
+    return {
+      title: labels.reminderNotificationTitle,
+      body: labels.reminderTestBody,
+    };
+  }
+
+  if (reminderType === "morning") {
+    return language === "vi"
+      ? {
+          title: "DreamSteps - Khởi động ngày mới",
+          body: "🌅 Hãy bắt đầu 1 ngày mới bằng việc duy trì những thói quen tốt.",
+        }
+      : {
+          title: "DreamSteps - Start Your Day",
+          body: "🌅 Start a new day by keeping your good habits alive.",
+        };
+  }
+
+  if (reminderType === "evening") {
+    return language === "vi"
+      ? {
+          title: "DreamSteps - Nhìn lại hôm nay",
+          body: "🌙 Hãy chậm lại 1 nhịp để nhìn lại 1 ngày đã trôi qua và chuẩn bị cho ngày mai tốt đẹp hơn.",
+        }
+      : {
+          title: "DreamSteps - Evening Review",
+          body: "🌙 Slow down for a moment to reflect on the day that has passed, so tomorrow can be better.",
+        };
+  }
+
+  return {
+    title: labels.reminderNotificationTitle,
+    body: labels.reminderNotificationBody.replace("{count}", String(pendingCount)),
+  };
+}
+
 async function showBrowserReminderNotification({
   pendingCount,
   isTest = false,
+  reminderType = "habitCount",
+  language,
   labels,
   setStatus,
 }: {
   pendingCount: number;
   isTest?: boolean;
+  reminderType?: BrowserReminderType;
+  language: Language;
   labels: ReturnType<typeof useLanguage>["t"]["stats"];
   setStatus: (value: string) => void;
 }) {
@@ -770,10 +826,13 @@ async function showBrowserReminderNotification({
     return false;
   }
 
-  const title = labels.reminderNotificationTitle;
-  const body = isTest
-    ? labels.reminderTestBody
-    : labels.reminderNotificationBody.replace("{count}", String(pendingCount));
+  const { title, body } = getBrowserReminderCopy({
+    language,
+    pendingCount,
+    isTest,
+    labels,
+    reminderType,
+  });
 
   try {
     if ("serviceWorker" in navigator) {
@@ -1662,6 +1721,7 @@ export default function HomePage() {
     const didShow = await showBrowserReminderNotification({
       pendingCount: Math.max(1, pendingCount),
       isTest: true,
+      language,
       labels: t.stats,
       setStatus: setReminderStatus,
     });
@@ -1684,6 +1744,7 @@ export default function HomePage() {
     void showBrowserReminderNotification({
       pendingCount: Math.max(1, pendingCount),
       isTest: true,
+      language,
       labels: t.stats,
       setStatus: setReminderStatus,
     });
@@ -1839,6 +1900,8 @@ export default function HomePage() {
       ) {
         void showBrowserReminderNotification({
           pendingCount: pendingHabits.length,
+          reminderType: "morning",
+          language,
           labels: t.stats,
           setStatus: setReminderStatus,
         }).then((didShow) => {
@@ -1856,6 +1919,8 @@ export default function HomePage() {
       ) {
         void showBrowserReminderNotification({
           pendingCount: Math.max(1, pendingHabits.length),
+          reminderType: "evening",
+          language,
           labels: t.stats,
           setStatus: setReminderStatus,
         }).then((didShow) => {
@@ -1884,6 +1949,7 @@ export default function HomePage() {
     reminderSettings.lastMorningSentDate,
     reminderSettings.lastEveningSentDate,
     todayHabits,
+    language,
     t.stats,
   ]);
 
