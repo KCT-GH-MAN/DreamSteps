@@ -63,6 +63,10 @@ const FOCUS_MODAL_TEXT = {
     pause: "Tạm dừng",
     play: "Tiếp tục",
     reset: "Làm lại",
+    resetFocus: "Làm lại phiên focus",
+    startFocus: "Bắt đầu phiên focus",
+    pauseFocus: "Tạm dừng phiên focus",
+    toggleSound: "Bật tắt âm thanh",
     close: "Đóng",
     deepFocusOn: "Bật Deep Focus",
     deepFocusOff: "Tắt Deep Focus",
@@ -85,6 +89,10 @@ const FOCUS_MODAL_TEXT = {
     pause: "Pause",
     play: "Play",
     reset: "Reset",
+    resetFocus: "Reset focus session",
+    startFocus: "Start focus session",
+    pauseFocus: "Pause focus session",
+    toggleSound: "Toggle ambient sound",
     close: "Close",
     deepFocusOn: "Turn on Deep Focus",
     deepFocusOff: "Turn off Deep Focus",
@@ -574,7 +582,7 @@ export default function FocusModal({
               <div className="mx-auto flex max-w-[220px] items-center justify-center gap-5">
                 <button
                   type="button"
-                  aria-label="Reset phiên focus"
+                  aria-label={text.resetFocus}
                   onClick={resetSession}
                   className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/5 text-gray-500 transition-all hover:bg-white/10 hover:text-white sm:h-12 sm:w-12"
                 >
@@ -583,7 +591,7 @@ export default function FocusModal({
 
                 <button
                   type="button"
-                  aria-label={isActive ? "Tạm dừng phiên focus" : "Bắt đầu phiên focus"}
+                  aria-label={isActive ? text.pauseFocus : text.startFocus}
                   onClick={() => setIsActive((prev) => !prev)}
                   className={`flex h-16 w-16 items-center justify-center rounded-[24px] transition-all shadow-xl sm:h-20 sm:w-20 sm:rounded-[28px] ${
                     isActive
@@ -626,7 +634,7 @@ export default function FocusModal({
 
                 <button
                   type="button"
-                  aria-label="Bật tắt âm thanh"
+                  aria-label={text.toggleSound}
                   onClick={() => setSoundEnabled((prev) => !prev)}
                   className={`shrink-0 rounded-full px-3 py-2 text-xs font-black transition-colors ${
                     soundEnabled
