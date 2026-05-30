@@ -71,7 +71,6 @@ const FOCUS_MODAL_TEXT = {
     youDidIt: "Bạn đã làm được rồi đấy!",
     completionTitle: "Hoàn thành rồi.",
     completionSubtitle: "Một bước nhỏ vẫn được tính.",
-    completedMinutes: (minutes: number) => `${minutes} phút tập trung`,
     startLine: "Hãy bắt đầu. Đừng đợi tới khi cảm thấy sẵn sàng!",
     runningLine: "Đang tập trung. Giữ nhịp này!",
     pausedLine: "Đã tạm dừng. Quay lại khi sẵn sàng.",
@@ -94,8 +93,6 @@ const FOCUS_MODAL_TEXT = {
     youDidIt: "You did it!",
     completionTitle: "Completed.",
     completionSubtitle: "A small step still counts.",
-    completedMinutes: (minutes: number) =>
-      `${minutes} focused ${minutes === 1 ? "minute" : "minutes"}`,
     startLine: "Just begin. No need to wait until you feel ready!",
     runningLine: "Focused now. Keep the rhythm.",
     pausedLine: "Paused. Resume when you're ready.",
@@ -686,40 +683,28 @@ export default function FocusModal({
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.9 }}
-                className="absolute inset-0 z-20 flex flex-col items-center justify-center overflow-hidden rounded-[34px] border border-white/10 bg-[#171A21] px-6 py-6 text-center shadow-2xl sm:rounded-[40px] sm:py-8"
+                className="absolute inset-0 z-20 flex flex-col items-center justify-center overflow-hidden rounded-[34px] border border-white/10 bg-[#171A21] px-6 py-8 text-center shadow-2xl sm:rounded-[40px]"
               >
-                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-[22px] bg-[#7EE2B8]/10 text-[#7EE2B8] shadow-[0_18px_45px_rgba(126,226,184,0.16)] sm:h-16 sm:w-16 sm:rounded-[26px]">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[26px] bg-[#7EE2B8]/10 text-[#7EE2B8] shadow-[0_18px_45px_rgba(126,226,184,0.16)]">
                   <PartyPopper
-                    size={30}
+                    size={34}
                     fill="#7EE2B8"
                     strokeWidth={0}
                   />
                 </div>
 
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#AFC2FF]">
-                  {text.completionTitle}
-                </p>
-
-                <h3 className="mt-2 max-w-[14ch] text-[30px] font-black italic leading-[0.95] tracking-[-0.04em] text-white sm:text-[38px]">
+                <h3 className="max-w-[12ch] text-[34px] font-black italic leading-[0.95] tracking-[-0.04em] text-white sm:text-[38px]">
                   {text.youDidIt}
                 </h3>
 
-                <div className="mt-4 rounded-2xl border border-[#7EE2B8]/15 bg-[#7EE2B8]/10 px-4 py-2.5 text-sm font-black text-[#A7F3D0] sm:mt-5 sm:py-3">
-                  {text.completedMinutes(minutes)}
-                </div>
-
-                <p className="mt-4 max-w-[24ch] text-balance text-center text-[16px] font-black leading-[1.35] tracking-[-0.02em] text-[#7EE2B8] transition-all duration-1000 sm:mt-5 sm:text-[20px]">
+                <p className="mt-5 max-w-[24ch] text-balance text-center text-[18px] font-black leading-[1.35] tracking-[-0.02em] text-[#7EE2B8] transition-all duration-1000 sm:text-[20px]">
                   {currentCompliment}
-                </p>
-
-                <p className="mt-2 max-w-[24ch] text-xs font-bold leading-relaxed text-gray-500 sm:mt-3">
-                  {text.completionSubtitle}
                 </p>
 
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="mt-5 w-full max-w-[220px] rounded-full bg-[#7EE2B8] px-8 py-3.5 text-sm font-black uppercase tracking-[0.18em] text-black shadow-lg shadow-[#7EE2B8]/15 transition-all hover:scale-[1.03] sm:mt-7"
+                  className="mt-7 w-full max-w-[220px] rounded-full bg-[#7EE2B8] px-8 py-3.5 text-sm font-black uppercase tracking-[0.18em] text-black shadow-lg shadow-[#7EE2B8]/15 transition-all hover:scale-[1.03]"
                 >
                   {text.keepGoing}
                 </button>
