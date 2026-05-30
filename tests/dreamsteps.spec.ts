@@ -33,6 +33,7 @@ test("shows empty stats insights", async ({ page }) => {
   });
   await page.goto("/");
   await page.getByRole("button", { name: /Stats/i }).click();
+  await expect(page.getByRole("heading", { name: /Weekly Heatmap/i })).toBeVisible();
 
   await expect(page.getByText("No focus data has been recorded this week.")).toBeVisible();
   await expect(
@@ -62,6 +63,7 @@ test("summarizes weekly stats insights", async ({ page }) => {
   });
   await page.goto("/");
   await page.getByRole("button", { name: /Stats/i }).click();
+  await expect(page.getByRole("heading", { name: /Weekly Heatmap/i })).toBeVisible();
 
   await expect(page.getByText("This week's total: 90 focused minutes.")).toBeVisible();
   await expect(page.getByText("You were active on 3 of the last 7 days.")).toBeVisible();
@@ -318,6 +320,48 @@ test("shows starter suggestions when no habits exist", async ({ page }) => {
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("input").first()).toHaveValue("Read 10 minutes");
   await expect(dialog.locator('input[type="number"]')).toHaveValue("10");
+});
+
+test("keeps a dense home habit list usable on mobile", async ({ page }) => {
+  const denseHabits = [
+    ["Read deeply", "BookOpen", 10, false, "daily", [], []],
+    ["Morning walk", "Footprints", 15, true, "weekly", [5], []],
+    ["Journal notes", "Pencil", 5, false, "monthly", [], [29]],
+    ["Strength training", "Dumbbell", 25, false, "daily", [], []],
+    ["Learn English", "Brain", 20, false, "weekly", [5], []],
+    ["Plan tomorrow", "Laptop", 10, true, "monthly", [], [29]],
+    ["Hydrate well", "GlassWater", 3, false, "daily", [], []],
+    ["Review goals", "Target", 12, false, "weekly", [5], []],
+  ].map(([title, iconName, minutes, completed, frequency, daysOfWeek, daysOfMonth], index) => ({
+    id: 7000 + index,
+    title,
+    iconName,
+    minutes,
+    completed,
+    frequency,
+    daysOfWeek,
+    daysOfMonth,
+  }));
+
+  await page.addInitScript((habits) => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem("ds-last-active", "2026-05-29");
+    window.localStorage.setItem("ds-habits", JSON.stringify(habits));
+  }, denseHabits);
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: /Today Habits/i })).toBeVisible();
+  await expect(page.getByText("Read deeply")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Start Focus Session/i }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /Edit habit Learn English/i })).toBeVisible();
+
+  const metrics = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
 });
 
 test("explains when existing habits are not scheduled today", async ({ page }) => {

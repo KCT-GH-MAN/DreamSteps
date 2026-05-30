@@ -2,7 +2,7 @@
 
 import { memo, ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Check, History, Pencil, Trash2 } from "lucide-react";
+import { Check, Clock3, History, Pencil, Play, Trash2 } from "lucide-react";
 
 interface HabitCardProps {
   habit: {
@@ -47,6 +47,8 @@ function HabitCard({
   onStartFocus,
 }: HabitCardProps) {
   const [frequencyText, detailText] = frequencyLabel.split(" · ");
+  const actionButtonClass =
+    "flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.035] text-gray-500 transition-colors hover:bg-white/10 hover:text-white sm:h-10 sm:w-10";
 
   return (
     <motion.div
@@ -54,40 +56,51 @@ function HabitCard({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`rounded-[26px] border p-4 transition-all duration-500 sm:rounded-[32px] sm:p-5 ${
+      className={`rounded-[22px] border p-3.5 transition-all duration-500 sm:rounded-[28px] sm:p-5 ${
         isCelebrating
           ? "border-[#7EE2B8]/40 bg-[#7EE2B8]/10 shadow-[0_0_40px_rgba(126,226,184,0.12)] scale-[1.01]"
           : `border-white/5 ${surfaceClassName}`
       }`}
     >
-      <div className="flex items-start justify-between gap-2 sm:gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/5 sm:h-14 sm:w-14">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/5 sm:h-14 sm:w-14">
             {icon}
           </div>
 
           <div className="min-w-0 flex-1">
             <h4
-              className={`break-words text-base font-bold leading-snug sm:text-lg ${
+              className={`break-words text-base font-black leading-tight sm:text-lg ${
                 habit.completed ? "line-through text-gray-500" : ""
               }`}
             >
               {habit.title}
             </h4>
-            <div className="mt-1 space-y-0.5 text-[11px] font-bold uppercase leading-snug text-gray-500 sm:text-xs">
-              <p>{habit.minutes} {minutesLabel}</p>
-              <p>{frequencyText}</p>
-              {detailText && <p>{detailText}</p>}
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-black uppercase leading-snug text-gray-500">
+              <span className="inline-flex items-center gap-1">
+                <Clock3 size={13} />
+                {habit.minutes} {minutesLabel}
+              </span>
+              <span className="text-gray-700">·</span>
+              <span>
+                {frequencyText}
+              </span>
+              {detailText && (
+                <>
+                  <span className="text-gray-700">·</span>
+                  <span>{detailText}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="flex shrink-0 gap-0.5 sm:gap-2">
+        <div className="grid shrink-0 grid-cols-4 gap-1 sm:gap-1.5">
           <button
             type="button"
             aria-label={`${detailsLabel} ${habit.title}`}
             onClick={onViewDetails}
-            className="p-1.5 text-gray-500 transition-colors hover:text-white sm:p-2"
+            className={actionButtonClass}
           >
             <History size={17} />
           </button>
@@ -96,7 +109,7 @@ function HabitCard({
             type="button"
             aria-label={`${editLabel} ${habit.title}`}
             onClick={onEdit}
-            className="p-1.5 text-gray-500 transition-colors hover:text-white sm:p-2"
+            className={actionButtonClass}
           >
             <Pencil size={17} />
           </button>
@@ -105,7 +118,7 @@ function HabitCard({
             type="button"
             aria-label={`${deleteLabel} ${habit.title}`}
             onClick={onDelete}
-            className="p-1.5 opacity-50 transition-opacity hover:opacity-100 sm:p-2"
+            className={`${actionButtonClass} opacity-60 hover:opacity-100`}
           >
             <Trash2 size={17} />
           </button>
@@ -115,9 +128,9 @@ function HabitCard({
             type="button"
             aria-label={`${completeLabel} ${habit.title}`}
             onClick={onComplete}
-            className={`p-1.5 transition-all sm:p-2 ${
+            className={`${actionButtonClass} transition-all ${
               habit.completed
-                ? "text-[#7EE2B8] scale-110"
+                ? "text-[#7EE2B8] scale-105"
                 : "text-gray-500 hover:text-white"
             }`}
           >
@@ -142,8 +155,9 @@ function HabitCard({
         <button
           type="button"
           onClick={onStartFocus}
-          className="mt-4 w-full rounded-2xl bg-white/5 py-3 text-xs font-bold uppercase tracking-[0.12em] transition-colors hover:bg-white/10"
+          className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-white/[0.055] px-4 text-sm font-black transition-colors hover:bg-white/10 sm:mt-4"
         >
+          <Play size={16} fill="currentColor" />
           {startFocusLabel}
         </button>
       )}
