@@ -2726,6 +2726,7 @@ export default function HomePage() {
                           editLabel={t.habits.editHabit}
                           deleteLabel={t.habits.deleteHabit}
                           completeLabel={t.habits.completeHabit}
+                          completedTodayLabel={t.habits.completedToday}
                           minutesLabel={t.common.shortMinutes}
                           onStartFocus={() => {
                             setSelectedMinutes(habit.minutes);

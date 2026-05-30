@@ -20,6 +20,7 @@ interface HabitCardProps {
   editLabel: string;
   deleteLabel: string;
   completeLabel: string;
+  completedTodayLabel: string;
   minutesLabel: string;
   onComplete: () => void;
   onViewDetails: () => void;
@@ -39,6 +40,7 @@ function HabitCard({
   editLabel,
   deleteLabel,
   completeLabel,
+  completedTodayLabel,
   minutesLabel,
   onComplete,
   onViewDetails,
@@ -46,9 +48,8 @@ function HabitCard({
   onDelete,
   onStartFocus,
 }: HabitCardProps) {
-  const [frequencyText, detailText] = frequencyLabel.includes(" · ")
-    ? frequencyLabel.split(" · ")
-    : frequencyLabel.split(" В· ");
+  const normalizedFrequencyLabel = frequencyLabel.replace(/\u00c2/g, "");
+  const [frequencyText, detailText] = normalizedFrequencyLabel.split(/\s+·\s+/);
   const actionButtonClass =
     "flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.035] text-gray-500 transition-colors hover:bg-white/10 hover:text-white";
 
@@ -86,6 +87,12 @@ function HabitCard({
             </h4>
 
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] font-black uppercase leading-snug text-gray-500">
+              {habit.completed && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#7EE2B8]/10 px-2 py-1 text-[#7EE2B8]">
+                  <Check size={12} strokeWidth={3} />
+                  {completedTodayLabel}
+                </span>
+              )}
               <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.035] px-2 py-1">
                 <Clock3 size={13} />
                 {habit.minutes} {minutesLabel}
@@ -129,7 +136,11 @@ function HabitCard({
         </motion.button>
       </div>
 
-      <div className="mt-3 flex items-center justify-end gap-1.5">
+      <div
+        className={`mt-3 flex items-center justify-end gap-1.5 ${
+          habit.completed ? "opacity-70" : ""
+        }`}
+      >
         <button
           type="button"
           aria-label={`${detailsLabel} ${habit.title}`}
