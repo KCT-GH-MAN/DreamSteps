@@ -274,28 +274,45 @@ test("shows starter suggestions when no habits exist", async ({ page }) => {
 });
 
 test("explains when existing habits are not scheduled today", async ({ page }) => {
-  const notDueHabit = {
-    id: 5101,
-    title: "Monday review",
-    iconName: "BookOpen",
-    minutes: 20,
-    completed: false,
-    frequency: "weekly",
-    daysOfWeek: [1],
-    daysOfMonth: [],
-  };
+  const notDueHabits = [
+    {
+      id: 5101,
+      title: "Monday review",
+      iconName: "BookOpen",
+      minutes: 20,
+      completed: false,
+      frequency: "weekly",
+      daysOfWeek: [1],
+      daysOfMonth: [],
+    },
+    {
+      id: 5102,
+      title: "Month end close",
+      iconName: "CalendarDays",
+      minutes: 15,
+      completed: false,
+      frequency: "monthly",
+      daysOfWeek: [],
+      daysOfMonth: [31],
+    },
+  ];
 
-  await page.addInitScript((habit) => {
+  await page.clock.setFixedTime(new Date("2026-04-29T08:30:00"));
+  await page.addInitScript((habits) => {
     window.localStorage.setItem("ds-language", "en");
     window.localStorage.setItem("ds-welcome-seen", "true");
-    window.localStorage.setItem("ds-last-active", "2026-05-29");
-    window.localStorage.setItem("ds-habits", JSON.stringify([habit]));
-  }, notDueHabit);
+    window.localStorage.setItem("ds-last-active", "2026-04-29");
+    window.localStorage.setItem("ds-habits", JSON.stringify(habits));
+  }, notDueHabits);
   await page.goto("/");
 
   await expect(page.getByText("Nothing is scheduled for today")).toBeVisible();
   await expect(page.getByText("Not Today")).toBeVisible();
   await expect(page.getByText("Monday review")).toBeVisible();
+  await expect(page.getByText("Month end close")).toBeVisible();
+  await expect(page.getByText(/Next: Mon,/i)).toBeVisible();
+  await expect(page.getByText(/Next:.*month end/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Edit habit schedule Monday review/i })).toBeVisible();
 });
 
 test("runs monthly habits on the last day of shorter months", async ({ page }) => {

@@ -523,6 +523,43 @@ function getFrequencyLabel(
   return t.habits.daily;
 }
 
+function getNextScheduledDate(habit: Habit, fromDate = new Date()) {
+  for (let offset = 1; offset <= 370; offset += 1) {
+    const date = new Date(fromDate);
+    date.setHours(12, 0, 0, 0);
+    date.setDate(fromDate.getDate() + offset);
+
+    if (isHabitDueToday(habit, date)) return date;
+  }
+
+  return null;
+}
+
+function getNextScheduleLabel(
+  habit: Habit,
+  t: ReturnType<typeof useLanguage>["t"],
+  language: Language
+) {
+  const nextDate = getNextScheduledDate(habit);
+
+  if (!nextDate) return t.habits.nextScheduleUnknown;
+
+  const formattedDate = new Intl.DateTimeFormat(language === "vi" ? "vi-VN" : "en-US", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  }).format(nextDate);
+  const scheduledMonthDay = habit.daysOfMonth?.[0];
+  const isMonthEndFallback =
+    habit.frequency === "monthly" &&
+    Boolean(scheduledMonthDay) &&
+    nextDate.getDate() !== scheduledMonthDay;
+
+  return `${t.habits.nextSchedule}: ${formattedDate}${
+    isMonthEndFallback ? ` (${t.habits.monthEndFallback})` : ""
+  }`;
+}
+
 function hasCompletedToday(todayStr: string) {
   return localStorage.getItem(STORAGE_KEYS.lastCompleted) === todayStr;
 }
@@ -2018,11 +2055,11 @@ export default function HomePage() {
     t.stats,
   ]);
 
-  const renderIcon = (iconName: IconName, completed: boolean) => {
+  const renderIcon = (iconName: IconName, completed: boolean, size = 26) => {
     const IconComp = ICON_MAP[iconName] || Star;
     const iconClass = completed ? "text-[#7EE2B8]" : "text-gray-400";
 
-    return <IconComp size={26} className={iconClass} />;
+    return <IconComp size={size} className={iconClass} />;
   };
 
   if (!mounted) return null;
@@ -2313,30 +2350,42 @@ export default function HomePage() {
                     {futureHabits.map((habit, index) => (
                       <div
                         key={`future-habit-${habit.id}-${index}`}
-                        className="flex items-center justify-between rounded-[24px] border border-white/5 bg-white/[0.03] px-5 py-4"
+                        className="flex items-center justify-between gap-3 rounded-[22px] border border-white/5 bg-white/[0.035] px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.025)]"
                       >
-                        <div>
-                          <p className="font-bold text-gray-400">{habit.title}</p>
-                          <p className="mt-1 text-xs uppercase text-gray-600">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ${currentTheme.accentBg} ${currentTheme.accentText}`}>
+                              {renderIcon(habit.iconName, false, 17)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-black text-gray-300">
+                                {habit.title}
+                              </p>
+                              <p className="mt-0.5 truncate text-[11px] font-bold uppercase tracking-wide text-gray-600">
+                                {getNextScheduleLabel(habit, t, language)}
+                              </p>
+                            </div>
+                          </div>
+                          <p className="mt-2 truncate pl-11 text-[11px] uppercase text-gray-600">
                             {habit.minutes} {t.common.shortMinutes} · {getFrequencyLabel(habit, t, weekDays)}
                           </p>
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex shrink-0 gap-1">
                           <button
                             type="button"
                             aria-label={`${t.habits.viewDetails} ${habit.title}`}
                             onClick={() => setSelectedHabitDetailId(habit.id)}
-                            className="p-2 text-gray-600 hover:text-white"
+                            className="rounded-xl p-2 text-gray-600 transition-colors hover:bg-white/5 hover:text-white"
                           >
                             <BarChart3 size={17} />
                           </button>
 
                           <button
                             type="button"
-                            aria-label={`${t.habits.editHabit} ${habit.title}`}
+                            aria-label={`${t.habits.editSchedule} ${habit.title}`}
                             onClick={() => openEditHabitSheet(habit)}
-                            className="p-2 text-gray-600 hover:text-white"
+                            className="rounded-xl p-2 text-gray-600 transition-colors hover:bg-white/5 hover:text-white"
                           >
                             <Pencil size={17} />
                           </button>
@@ -2345,7 +2394,7 @@ export default function HomePage() {
                           type="button"
                           aria-label={`${t.habits.deleteHabit} ${habit.title}`}
                           onClick={() => deleteHabit(habit.id)}
-                          className="p-2 text-gray-600 hover:text-white"
+                          className="rounded-xl p-2 text-gray-600 transition-colors hover:bg-white/5 hover:text-white"
                         >
                           <Trash2 size={17} />
                         </button>
