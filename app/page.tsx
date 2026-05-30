@@ -448,6 +448,21 @@ function getTodayStr() {
   return getLocalDateKey();
 }
 
+function getLastDayOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+}
+
+function isMonthlyHabitDueOnDate(habit: Habit, date: Date) {
+  const scheduledDay = habit.daysOfMonth?.[0];
+
+  if (!scheduledDay) return true;
+
+  const today = date.getDate();
+  const effectiveScheduledDay = Math.min(scheduledDay, getLastDayOfMonth(date));
+
+  return today === effectiveScheduledDay;
+}
+
 function isHabitDueToday(habit: Habit, date = new Date()) {
   if (habit.frequency === "daily") return true;
 
@@ -457,8 +472,7 @@ function isHabitDueToday(habit: Habit, date = new Date()) {
   }
 
   if (habit.frequency === "monthly") {
-    const today = date.getDate();
-    return habit.daysOfMonth?.includes(today) ?? false;
+    return isMonthlyHabitDueOnDate(habit, date);
   }
 
   return true;

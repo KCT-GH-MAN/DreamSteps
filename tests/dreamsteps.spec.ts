@@ -133,6 +133,45 @@ test("validates the add habit form before submit", async ({ page }) => {
   await expect(page.getByText("Write notes")).toBeVisible();
 });
 
+test("runs monthly habits on the last day of shorter months", async ({ page }) => {
+  const monthlyHabit = {
+    id: 3101,
+    title: "Month end review",
+    iconName: "CalendarDays",
+    minutes: 20,
+    completed: false,
+    frequency: "monthly",
+    daysOfWeek: [],
+    daysOfMonth: [31],
+  };
+
+  const cases = [
+    { date: "2026-04-30T08:30:00", today: "2026-04-30" },
+    { date: "2026-02-28T08:30:00", today: "2026-02-28" },
+  ];
+
+  for (const item of cases) {
+    await test.step(item.today, async () => {
+      await page.clock.setFixedTime(new Date(item.date));
+      await page.goto("/");
+      await page.evaluate(
+        ({ habit, today }) => {
+          window.localStorage.setItem("ds-welcome-seen", "true");
+          window.localStorage.setItem("ds-last-active", today);
+          window.localStorage.setItem("ds-habits", JSON.stringify([habit]));
+        },
+        { habit: monthlyHabit, today: item.today }
+      );
+      await page.reload();
+
+      await expect(page.getByRole("heading", { name: /Thói quen hôm nay|Today/i })).toBeVisible();
+      await expect(page.getByText("Month end review")).toBeVisible();
+      await expect(page.getByText(/20/)).toBeVisible();
+      await expect(page.getByText(/Hằng tháng.*31|Monthly.*31/i)).toBeVisible();
+    });
+  }
+});
+
 test("records and shows habit history", async ({ page }) => {
   await page.getByRole("button", { name: /Hoàn thành thói quen|Complete habit/i }).first().click();
   await page.getByRole("button", { name: /Xem lịch sử|View history/i }).first().click();
