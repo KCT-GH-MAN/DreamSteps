@@ -3,6 +3,10 @@ import { expect, test } from "@playwright/test";
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-05-29T19:30:00"));
   await page.addInitScript(() => {
+    if (!window.sessionStorage.getItem("ds-e2e-storage-cleared")) {
+      window.localStorage.clear();
+      window.sessionStorage.setItem("ds-e2e-storage-cleared", "true");
+    }
     window.localStorage.setItem("ds-welcome-seen", "true");
   });
   await page.goto("/");
@@ -517,6 +521,61 @@ test("shows daily reminder settings", async ({ page }) => {
   await expect(eveningInput).toHaveValue("20:45");
   await expect(page.locator('input[type="number"]')).toHaveValue("3");
   await expect(page.getByRole("button", { name: /Bật nhắc|Enable/i })).toBeVisible();
+});
+
+test("shows reminder health details and validates reengage days", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+  });
+  await page.route("**/api/push/public-key", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ publicKey: "test-public-key" }),
+    });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Stats/i }).click();
+
+  await expect(page.getByText(/Daily Reminder|NhбєЇc nhб»џ hбє±ng ngГ y/i)).toBeVisible();
+  await expect(page.getByText(/Notifications|ThГґng bГЎo/i)).toBeVisible();
+  await expect(page.getByText(/Permission|Quyб»Ѓn/i)).toBeVisible();
+  await expect(page.getByText(/Background push|Push nб»Ѓn/i)).toBeVisible();
+  await expect(page.getByText(/Server key|KhГіa server/i)).toBeVisible();
+  await expect(page.getByText(/Last reminder|Lбє§n nhбєЇc gбє§n nhбєҐt/i)).toBeVisible();
+  await expect(page.getByText(/Ready|Sбєµn sГ ng/i).first()).toBeVisible();
+
+  const reengageInput = page.locator('input[type="number"]');
+  await expect(reengageInput).toHaveValue("3");
+  await reengageInput.fill("0");
+  await expect(reengageInput).toHaveValue("3");
+});
+
+test("normalizes incomplete reminder settings", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem(
+      "ds-reminder-settings",
+      JSON.stringify({
+        enabled: true,
+        time: "20:15",
+        reengageAfterDays: 99,
+      })
+    );
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Stats/i }).click();
+
+  const morningInput = page.locator('input[type="time"]').first();
+  const eveningInput = page.locator('input[type="time"]').nth(1);
+  const reengageInput = page.locator('input[type="number"]');
+
+  await expect(morningInput).toHaveValue("06:00");
+  await expect(eveningInput).toHaveValue("20:15");
+  await expect(reengageInput).toHaveValue("3");
+  await expect(page.getByText("On", { exact: true })).toBeVisible();
 });
 
 test("completes a habit when its focus session finishes", async ({ page }) => {

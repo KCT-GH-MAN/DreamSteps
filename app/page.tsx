@@ -244,6 +244,15 @@ type ReminderSettings = {
   lastEveningSentDate: string | null;
 };
 
+type ReminderCapabilityStatus = "checking" | "supported" | "unsupported" | "missing";
+
+type ReminderHealth = {
+  notifications: ReminderCapabilityStatus;
+  permission: NotificationPermission | "unsupported";
+  push: ReminderCapabilityStatus;
+  serverKey: ReminderCapabilityStatus;
+};
+
 type TimelineEntry = {
   id: number;
   type: "habit" | "focus" | "reflection";
@@ -362,9 +371,21 @@ const DEFAULT_REMINDER_SETTINGS: ReminderSettings = {
   lastMorningSentDate: null,
   lastEveningSentDate: null,
 };
+const DEFAULT_REMINDER_HEALTH: ReminderHealth = {
+  notifications: "checking",
+  permission: "default",
+  push: "checking",
+  serverKey: "checking",
+};
 
 function isValidReminderTime(value: string) {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+function normalizeReengageDays(value: number) {
+  return Number.isInteger(value) && value >= 1 && value <= 30
+    ? value
+    : DEFAULT_REMINDER_SETTINGS.reengageAfterDays;
 }
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -947,13 +968,7 @@ function getReminderSettings(): ReminderSettings {
           : typeof parsed.time === "string" && isValidReminderTime(parsed.time)
             ? parsed.time
             : DEFAULT_REMINDER_SETTINGS.eveningTime,
-      reengageAfterDays:
-        typeof parsed.reengageAfterDays === "number" &&
-        Number.isInteger(parsed.reengageAfterDays) &&
-        parsed.reengageAfterDays >= 1 &&
-        parsed.reengageAfterDays <= 30
-          ? parsed.reengageAfterDays
-          : DEFAULT_REMINDER_SETTINGS.reengageAfterDays,
+      reengageAfterDays: normalizeReengageDays(Number(parsed.reengageAfterDays)),
       lastSentDate:
         typeof parsed.lastSentDate === "string" ? parsed.lastSentDate : null,
       lastMorningSentDate:
@@ -974,6 +989,69 @@ function getReminderSettings(): ReminderSettings {
 
 function saveReminderSettings(settings: ReminderSettings) {
   localStorage.setItem(STORAGE_KEYS.reminderSettings, JSON.stringify(settings));
+}
+
+function getReminderHealthItems(
+  health: ReminderHealth,
+  settings: ReminderSettings,
+  t: ReturnType<typeof useLanguage>["t"]
+) {
+  const statusLabel = (status: ReminderCapabilityStatus) => {
+    if (status === "supported") return t.stats.reminderHealthOk;
+    if (status === "unsupported") return t.stats.reminderHealthUnsupported;
+    if (status === "missing") return t.stats.reminderHealthMissing;
+    return t.stats.reminderHealthChecking;
+  };
+  const permissionLabel =
+    health.permission === "unsupported"
+      ? t.stats.reminderHealthUnsupported
+      : health.permission === "granted"
+        ? t.stats.reminderPermissionGranted
+        : health.permission === "denied"
+          ? t.stats.reminderPermissionDenied
+          : t.stats.reminderPermissionDefault;
+  const lastSentItems = [
+    settings.lastMorningSentDate,
+    settings.lastEveningSentDate,
+    settings.lastSentDate,
+  ].filter(Boolean) as string[];
+  const lastSent = lastSentItems[0] ?? t.stats.reminderNeverSent;
+
+  return [
+    { label: t.stats.reminderHealthNotifications, value: statusLabel(health.notifications) },
+    { label: t.stats.reminderHealthPermission, value: permissionLabel },
+    { label: t.stats.reminderHealthPush, value: statusLabel(health.push) },
+    { label: t.stats.reminderHealthServerKey, value: statusLabel(health.serverKey) },
+    { label: t.stats.reminderLastSent, value: lastSent },
+  ];
+}
+
+async function getReminderHealth(): Promise<ReminderHealth> {
+  const notificationsSupported =
+    typeof window !== "undefined" && "Notification" in window;
+  const pushSupported =
+    typeof navigator !== "undefined" &&
+    "serviceWorker" in navigator &&
+    typeof window !== "undefined" &&
+    "PushManager" in window;
+  let serverKey: ReminderCapabilityStatus = "unsupported";
+
+  if (pushSupported) {
+    try {
+      const response = await fetch("/api/push/public-key");
+      const payload = (await response.json()) as { publicKey?: string };
+      serverKey = payload.publicKey ? "supported" : "missing";
+    } catch {
+      serverKey = "missing";
+    }
+  }
+
+  return {
+    notifications: notificationsSupported ? "supported" : "unsupported",
+    permission: notificationsSupported ? Notification.permission : "unsupported",
+    push: pushSupported ? "supported" : "unsupported",
+    serverKey,
+  };
 }
 
 type BrowserReminderType = "habitCount" | "morning" | "evening";
@@ -1464,6 +1542,9 @@ export default function HomePage() {
   const [reminderSettings, setReminderSettings] = useState<ReminderSettings>(
     DEFAULT_REMINDER_SETTINGS
   );
+  const [reminderHealth, setReminderHealth] = useState<ReminderHealth>(
+    DEFAULT_REMINDER_HEALTH
+  );
   const [reminderStatus, setReminderStatus] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newMinutes, setNewMinutes] = useState("10");
@@ -1551,6 +1632,10 @@ export default function HomePage() {
     selectedHabitDetail === null
       ? []
       : habitHistory[String(selectedHabitDetail.id)] ?? [];
+  const reminderHealthItems = useMemo(
+    () => getReminderHealthItems(reminderHealth, reminderSettings, t),
+    [reminderHealth, reminderSettings, t]
+  );
 
   const refreshAppData = useCallback(() => {
     const now = new Date();
@@ -1648,6 +1733,19 @@ export default function HomePage() {
     localStorage.setItem("ds-theme", adaptiveTheme);
   }, [adaptiveTheme, mounted]);
 
+  useEffect(() => {
+    if (!mounted) return;
+
+    let cancelled = false;
+
+    void getReminderHealth().then((health) => {
+      if (!cancelled) setReminderHealth(health);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted]);
 
   useEffect(() => {
     if (!mounted || !isLoaded) return;
@@ -2005,6 +2103,10 @@ export default function HomePage() {
       await registerPushReminder();
       updateReminderSettings({ enabled: true });
       setReminderStatus(t.stats.reminderEnabled);
+      setReminderHealth((current) => ({
+        ...current,
+        permission: "granted",
+      }));
     }
   };
 
@@ -2811,10 +2913,7 @@ export default function HomePage() {
                         const nextDays = Number(event.target.value);
                         const nextSettings = {
                           ...reminderSettings,
-                          reengageAfterDays:
-                            Number.isInteger(nextDays) && nextDays >= 1 && nextDays <= 30
-                              ? nextDays
-                              : DEFAULT_REMINDER_SETTINGS.reengageAfterDays,
+                          reengageAfterDays: normalizeReengageDays(nextDays),
                         };
 
                         updateReminderSettings(nextSettings);
@@ -2826,6 +2925,22 @@ export default function HomePage() {
                       className="h-12 w-full rounded-2xl border border-white/5 bg-white/5 px-4 text-sm font-black text-white outline-none focus:ring-2 focus:ring-[#7C9EFF]"
                     />
                   </label>
+                </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {reminderHealthItems.map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-2xl border border-white/5 bg-white/[0.035] px-4 py-3"
+                    >
+                      <p className="text-[10px] font-black uppercase tracking-[0.16em] text-gray-600">
+                        {item.label}
+                      </p>
+                      <p className="mt-1 text-sm font-black text-gray-300">
+                        {item.value}
+                      </p>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="mt-3 flex flex-wrap justify-end gap-3">
