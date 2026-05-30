@@ -82,6 +82,7 @@ export default function AddHabitSheet<IconName extends string>({
           return day;
         })
       : [];
+  const centerMonthDayIndex = Math.floor(nearbyMonthDays.length / 2);
   const changeMonthDay = (direction: -1 | 1) => {
     const nextDay =
       direction === -1
@@ -190,7 +191,7 @@ export default function AddHabitSheet<IconName extends string>({
               ))}
             </div>
 
-            <div className="mb-4 min-h-[128px]">
+            <div className="mb-4 min-h-[134px]">
               {newFrequency === "weekly" && (
                 <>
                   <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-gray-500">
@@ -220,45 +221,73 @@ export default function AddHabitSheet<IconName extends string>({
                   <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-gray-500">
                     {labels.chooseMonthDays}
                   </p>
-                  <div className="grid grid-cols-[48px_1fr_48px] items-center gap-2.5 sm:grid-cols-[52px_1fr_52px] sm:gap-3">
+                  <div className="grid grid-cols-[44px_1fr_44px] items-center gap-2 sm:grid-cols-[48px_1fr_48px] sm:gap-2.5">
                     <button
                       type="button"
                       aria-label="Previous month day"
                       onClick={() => changeMonthDay(-1)}
-                      className="flex h-12 items-center justify-center rounded-2xl bg-white/5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white sm:h-[52px]"
+                      className="flex h-12 items-center justify-center rounded-2xl border border-white/5 bg-white/[0.06] text-gray-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors hover:bg-white/10 hover:text-white"
                     >
                       <ChevronLeft size={20} />
                     </button>
 
-                    <div className="flex h-12 items-center justify-center rounded-2xl border border-[#7C9EFF]/35 bg-[#7C9EFF]/15 px-4 text-center text-2xl font-black leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:h-[52px]">
-                      {selectedMonthDay}
+                    <div className="relative flex h-12 items-center justify-center overflow-hidden rounded-2xl border border-[#7C9EFF]/30 bg-[linear-gradient(135deg,rgba(124,158,255,0.22),rgba(255,255,255,0.055))] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_34px_rgba(124,158,255,0.12)]">
+                      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        <motion.span
+                          key={selectedMonthDay}
+                          initial={{ opacity: 0, y: 10, scale: 0.94 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.94 }}
+                          transition={{ duration: 0.16, ease: "easeOut" }}
+                          className="relative text-2xl font-black leading-none text-white"
+                        >
+                          {selectedMonthDay}
+                        </motion.span>
+                      </AnimatePresence>
                     </div>
 
                     <button
                       type="button"
                       aria-label="Next month day"
                       onClick={() => changeMonthDay(1)}
-                      className="flex h-12 items-center justify-center rounded-2xl bg-white/5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white sm:h-[52px]"
+                      className="flex h-12 items-center justify-center rounded-2xl border border-white/5 bg-white/[0.06] text-gray-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors hover:bg-white/10 hover:text-white"
                     >
                       <ChevronRight size={20} />
                     </button>
                   </div>
-                  <div className="mt-2 flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                    {nearbyMonthDays.map((day) => (
-                      <button
-                        key={day}
-                        type="button"
-                        aria-label={`Choose month day ${day}`}
-                        onClick={() => onToggleMonthDay(day)}
-                        className={`flex h-10 min-w-10 items-center justify-center rounded-xl text-sm font-black transition-all ${
-                          selectedMonthDay === day
-                            ? "bg-[#7C9EFF] text-white"
-                            : "bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white"
-                        }`}
-                      >
-                        {day}
-                      </button>
-                    ))}
+                  <div className="mt-2 rounded-2xl border border-white/5 bg-black/10 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <div className="grid grid-cols-7 gap-1.5">
+                      {nearbyMonthDays.map((day, index) => {
+                        const distance = Math.abs(index - centerMonthDayIndex);
+                        const isSelected = selectedMonthDay === day;
+
+                        return (
+                          <button
+                            key={`${day}-${index}`}
+                            type="button"
+                            aria-label={`Choose month day ${day}`}
+                            onClick={() => onToggleMonthDay(day)}
+                            className={`relative flex h-9 items-center justify-center rounded-xl text-sm font-black transition-all ${
+                              isSelected
+                                ? "bg-[#7C9EFF] text-white shadow-[0_10px_24px_rgba(124,158,255,0.28)]"
+                                : distance === 1
+                                  ? "bg-white/[0.07] text-gray-300 hover:bg-white/10 hover:text-white"
+                                  : "bg-white/[0.04] text-gray-500 hover:bg-white/10 hover:text-white"
+                            }`}
+                          >
+                            {isSelected && (
+                              <motion.span
+                                layoutId="selected-month-day"
+                                className="absolute inset-0 rounded-xl ring-1 ring-white/25"
+                                transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                              />
+                            )}
+                            <span className="relative">{day}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </>
               )}
