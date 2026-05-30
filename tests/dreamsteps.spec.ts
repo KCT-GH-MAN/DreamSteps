@@ -380,6 +380,127 @@ test("can export a data backup", async ({ page }) => {
   await expect(page.getByText(/Đã xuất file sao lưu|Backup file exported/i)).toBeVisible();
 });
 
+test("rejects invalid backup imports without replacing data", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem(
+      "ds-habits",
+      JSON.stringify([
+        {
+          id: 6101,
+          title: "Keep me",
+          iconName: "BookOpen",
+          minutes: 12,
+          completed: false,
+          frequency: "daily",
+          daysOfWeek: [],
+          daysOfMonth: [],
+        },
+      ])
+    );
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Stats/i }).click();
+
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "broken-dreamsteps-backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        app: "DreamSteps",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        data: {
+          "ds-habits": JSON.stringify([{ title: "Broken habit" }]),
+        },
+      })
+    ),
+  });
+
+  await expect(page.getByText(/Invalid backup file/i)).toBeVisible();
+
+  const storedHabits = await page.evaluate(() => window.localStorage.getItem("ds-habits"));
+  expect(storedHabits).toContain("Keep me");
+  expect(storedHabits).not.toContain("Broken habit");
+});
+
+test("previews and restores a valid backup import", async ({ page }) => {
+  const backup = {
+    app: "DreamSteps",
+    version: 1,
+    exportedAt: "2026-05-29T10:00:00.000Z",
+    data: {
+      "ds-language": "en",
+      "ds-welcome-seen": "true",
+      "ds-last-active": "2026-05-29",
+      "ds-habits": JSON.stringify([
+        {
+          id: 6201,
+          title: "Restored habit",
+          iconName: "BookOpen",
+          minutes: 18,
+          completed: false,
+          frequency: "daily",
+          daysOfWeek: [],
+          daysOfMonth: [],
+        },
+      ]),
+      "ds-analytics": JSON.stringify({
+        days: [{ date: "2026-05-29", focusedMinutes: 18, completedHabits: 1 }],
+      }),
+      "ds-habit-history": JSON.stringify({
+        "6201": [
+          { date: "2026-05-29", minutes: 18, completedAt: "2026-05-29T10:30:00.000Z" },
+        ],
+      }),
+      "ds-reflections": JSON.stringify([
+        { date: "2026-05-29", intent: "Restore", win: "", blocker: "", mood: null },
+      ]),
+      "ds-timeline": JSON.stringify([
+        { id: 1, type: "habit", title: "Restored habit", minutes: 18, createdAt: "2026-05-29T10:30:00.000Z" },
+      ]),
+      "ds-reminder-settings": JSON.stringify({
+        enabled: false,
+        time: "21:00",
+        morningTime: "06:00",
+        eveningTime: "21:00",
+        reengageAfterDays: 3,
+        lastSentDate: null,
+        lastMorningSentDate: null,
+        lastEveningSentDate: null,
+      }),
+    },
+  };
+
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem("ds-habits", JSON.stringify([]));
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Stats/i }).click();
+
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toContain("Habits: 1");
+    expect(dialog.message()).toContain("Analytics days: 1");
+    expect(dialog.message()).toContain("History entries: 1");
+    expect(dialog.message()).toContain("Reflections: 1");
+    expect(dialog.message()).toContain("Timeline entries: 1");
+    await dialog.accept();
+  });
+
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "dreamsteps-backup-valid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(backup)),
+  });
+
+  await expect(page.getByText(/Backup data imported/i)).toBeVisible();
+  await page.getByRole("button", { name: /Home/i }).click();
+  await expect(page.getByText("Restored habit")).toBeVisible();
+});
+
 test("shows daily reminder settings", async ({ page }) => {
   await page.getByRole("button", { name: /Thống kê|Stats/i }).click();
 

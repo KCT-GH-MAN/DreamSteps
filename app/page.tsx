@@ -224,6 +224,15 @@ type DreamStepsBackup = {
   data: Record<string, string>;
 };
 
+type BackupPreview = {
+  exportedAt: string;
+  habitCount: number;
+  analyticsDayCount: number;
+  historyEntryCount: number;
+  reflectionCount: number;
+  timelineEntryCount: number;
+};
+
 type ReminderSettings = {
   enabled: boolean;
   time: string;
@@ -337,6 +346,12 @@ const STORAGE_KEYS = {
 };
 
 const BACKUP_PREFIX = "ds-";
+const OPTIONAL_BACKUP_KEYS = new Set([
+  "ds-language",
+  "ds-welcome-seen",
+  "ds-theme",
+  "ds-last-session-type",
+]);
 const DEFAULT_REMINDER_SETTINGS: ReminderSettings = {
   enabled: false,
   time: "21:00",
@@ -730,6 +745,144 @@ function createBackupPayload(): DreamStepsBackup {
   };
 }
 
+function tryParseJsonObject(value: string) {
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function tryParseJsonArray(value: string) {
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function isValidBackupDate(value: string | null | undefined) {
+  return typeof value === "string" && !Number.isNaN(new Date(value).getTime());
+}
+
+function isValidStoredDateValue(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function isValidStoredNumber(value: string) {
+  return value.trim() !== "" && Number.isFinite(Number(value));
+}
+
+function isKnownBackupKey(key: string) {
+  return (
+    (Object.values(STORAGE_KEYS) as string[]).includes(key) ||
+    OPTIONAL_BACKUP_KEYS.has(key)
+  );
+}
+
+function isValidBackupHabit(value: unknown) {
+  if (!value || typeof value !== "object") return false;
+
+  const habit = value as Partial<Habit>;
+
+  return (
+    typeof habit.id === "number" &&
+    typeof habit.title === "string" &&
+    typeof habit.iconName === "string" &&
+    typeof habit.minutes === "number" &&
+    typeof habit.completed === "boolean" &&
+    (habit.frequency === undefined ||
+      habit.frequency === "daily" ||
+      habit.frequency === "weekly" ||
+      habit.frequency === "monthly") &&
+    (habit.daysOfWeek === undefined ||
+      (Array.isArray(habit.daysOfWeek) &&
+        habit.daysOfWeek.every((day) => typeof day === "number"))) &&
+    (habit.daysOfMonth === undefined ||
+      (Array.isArray(habit.daysOfMonth) &&
+        habit.daysOfMonth.every((day) => typeof day === "number")))
+  );
+}
+
+function isValidBackupData(data: Record<string, string>) {
+  return Object.entries(data).every(([key, value]) => {
+    if (!key.startsWith(BACKUP_PREFIX) || !isKnownBackupKey(key)) return false;
+
+    if (key === STORAGE_KEYS.habits) {
+      const parsed = tryParseJsonArray(value);
+      return Boolean(parsed && parsed.every(isValidBackupHabit));
+    }
+
+    if (key === STORAGE_KEYS.analytics) {
+      const parsed = tryParseJsonObject(value);
+      return Boolean(parsed && Array.isArray((parsed as AnalyticsData).days));
+    }
+
+    if (key === STORAGE_KEYS.habitHistory) {
+      return Boolean(tryParseJsonObject(value));
+    }
+
+    if (key === STORAGE_KEYS.reminderSettings) {
+      return Boolean(tryParseJsonObject(value));
+    }
+
+    if (key === STORAGE_KEYS.reflections || key === STORAGE_KEYS.timeline) {
+      return Boolean(tryParseJsonArray(value));
+    }
+
+    if (key === STORAGE_KEYS.momentum || key === STORAGE_KEYS.streak) {
+      return isValidStoredNumber(value);
+    }
+
+    if (key === STORAGE_KEYS.lastCompleted || key === STORAGE_KEYS.lastActive) {
+      return isValidStoredDateValue(value);
+    }
+
+    return true;
+  });
+}
+
+function getBackupPreview(backup: DreamStepsBackup): BackupPreview {
+  const habits = backup.data[STORAGE_KEYS.habits]
+    ? safeParseHabits(backup.data[STORAGE_KEYS.habits])
+    : [];
+  const analytics = backup.data[STORAGE_KEYS.analytics]
+    ? tryParseJsonObject(backup.data[STORAGE_KEYS.analytics])
+    : null;
+  const history = backup.data[STORAGE_KEYS.habitHistory]
+    ? tryParseJsonObject(backup.data[STORAGE_KEYS.habitHistory])
+    : null;
+  const reflections =
+    backup.data[STORAGE_KEYS.reflections]
+    ? tryParseJsonArray(backup.data[STORAGE_KEYS.reflections])
+    : [];
+  const timelineEntries =
+    backup.data[STORAGE_KEYS.timeline]
+    ? tryParseJsonArray(backup.data[STORAGE_KEYS.timeline])
+    : [];
+  const historyEntryCount = history
+    ? Object.values(history).reduce<number>((count, value) => {
+        return count + (Array.isArray(value) ? value.length : 0);
+      }, 0)
+    : 0;
+
+  return {
+    exportedAt: backup.exportedAt,
+    habitCount: habits.length,
+    analyticsDayCount:
+      analytics && Array.isArray((analytics as AnalyticsData).days)
+        ? (analytics as AnalyticsData).days.length
+        : 0,
+    historyEntryCount,
+    reflectionCount: reflections?.length ?? 0,
+    timelineEntryCount: timelineEntries?.length ?? 0,
+  };
+}
+
 function parseBackupPayload(value: string): DreamStepsBackup | null {
   try {
     const parsed = JSON.parse(value);
@@ -738,7 +891,7 @@ function parseBackupPayload(value: string): DreamStepsBackup | null {
       !parsed ||
       parsed.app !== "DreamSteps" ||
       parsed.version !== 1 ||
-      typeof parsed.exportedAt !== "string" ||
+      !isValidBackupDate(parsed.exportedAt) ||
       !parsed.data ||
       typeof parsed.data !== "object" ||
       Array.isArray(parsed.data)
@@ -751,6 +904,8 @@ function parseBackupPayload(value: string): DreamStepsBackup | null {
         return key.startsWith(BACKUP_PREFIX) && typeof item === "string";
       })
     ) as Record<string, string>;
+
+    if (!isValidBackupData(data)) return null;
 
     return {
       app: "DreamSteps",
@@ -1771,7 +1926,25 @@ export default function HomePage() {
       return;
     }
 
-    const shouldImport = window.confirm(t.stats.backupImportConfirm);
+    const preview = getBackupPreview(backup);
+    const exportedAt = new Intl.DateTimeFormat(
+      language === "vi" ? "vi-VN" : "en-US",
+      {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }
+    ).format(new Date(preview.exportedAt));
+    const previewText = t.stats.backupImportPreview
+      .replace("{exportedAt}", exportedAt)
+      .replace("{habits}", String(preview.habitCount))
+      .replace("{analyticsDays}", String(preview.analyticsDayCount))
+      .replace("{historyEntries}", String(preview.historyEntryCount))
+      .replace("{reflections}", String(preview.reflectionCount))
+      .replace("{timelineEntries}", String(preview.timelineEntryCount));
+
+    const shouldImport = window.confirm(
+      `${previewText}\n\n${t.stats.backupImportConfirm}`
+    );
     if (!shouldImport) return;
 
     for (let index = localStorage.length - 1; index >= 0; index -= 1) {

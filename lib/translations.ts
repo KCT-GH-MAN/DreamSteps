@@ -172,6 +172,8 @@ export const translations = {
       backupImported: "Đã nhập dữ liệu sao lưu.",
       backupDeleted: "Đã xóa dữ liệu trên thiết bị này.",
       backupInvalid: "File sao lưu không hợp lệ.",
+      backupImportPreview:
+        "Bản sao lưu: {exportedAt}\nThói quen: {habits}\nNgày thống kê: {analyticsDays}\nLịch sử hoàn thành: {historyEntries}\nNhìn lại: {reflections}\nDòng thời gian: {timelineEntries}",
       backupImportConfirm: "Nhập file này sẽ ghi đè dữ liệu DreamSteps hiện tại. Tiếp tục?",
       backupDeleteConfirm: "Xóa toàn bộ dữ liệu DreamSteps trên thiết bị này? Bạn nên xuất dữ liệu trước khi xóa.",
       reminderTitle: "Nhắc nhở hằng ngày",
@@ -387,6 +389,8 @@ export const translations = {
       backupImported: "Backup data imported.",
       backupDeleted: "Data on this device was deleted.",
       backupInvalid: "Invalid backup file.",
+      backupImportPreview:
+        "Backup: {exportedAt}\nHabits: {habits}\nAnalytics days: {analyticsDays}\nHistory entries: {historyEntries}\nReflections: {reflections}\nTimeline entries: {timelineEntries}",
       backupImportConfirm: "Importing this file will replace your current DreamSteps data. Continue?",
       backupDeleteConfirm: "Delete all DreamSteps data on this device? You should export your data first.",
       reminderTitle: "Daily Reminder",
