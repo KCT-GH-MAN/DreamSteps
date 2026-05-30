@@ -562,12 +562,12 @@ export default function FocusModal({
 
           {!showCompliment && (
             <>
-              <div className="mx-auto grid max-w-[260px] grid-cols-3 items-center gap-4">
+              <div className="mx-auto flex max-w-[220px] items-center justify-center gap-5">
                 <button
                   type="button"
                   aria-label={text.reset}
                   onClick={resetSession}
-                  className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-gray-500 transition-all hover:bg-white/10 hover:text-white"
+                  className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-gray-500 transition-all hover:bg-white/10 hover:text-white"
                 >
                   <RotateCcw size={22} />
                 </button>
@@ -576,7 +576,7 @@ export default function FocusModal({
                   type="button"
                   aria-label={isActive ? text.pause : text.play}
                   onClick={() => setIsActive((prev) => !prev)}
-                  className={`mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] transition-all shadow-xl sm:h-20 sm:w-20 sm:rounded-[28px] ${
+                  className={`flex h-16 w-16 items-center justify-center rounded-[24px] transition-all shadow-xl sm:h-20 sm:w-20 sm:rounded-[28px] ${
                     isActive
                       ? "bg-white text-black scale-95"
                       : "bg-[#7C9EFF] text-white shadow-[#7C9EFF]/30 scale-100"
@@ -588,15 +588,6 @@ export default function FocusModal({
                     <Play size={30} fill="currentColor" className="ml-1.5" />
                   )}
                 </button>
-
-                <button
-                  type="button"
-                  aria-label={soundEnabled ? `${text.ambientSound} ${text.off}` : `${text.ambientSound} ${text.on}`}
-                  onClick={() => setSoundEnabled((prev) => !prev)}
-                  className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-gray-500 transition-all hover:bg-white/10 hover:text-white"
-                >
-                  {soundEnabled ? <Volume2 size={21} /> : <VolumeX size={21} />}
-                </button>
               </div>
 
               <p className="mt-5 rounded-2xl bg-white/5 px-4 py-2.5 text-xs font-bold leading-relaxed text-gray-500">
@@ -606,19 +597,27 @@ export default function FocusModal({
           )}
 
           {!deepFocus && !showCompliment && (
-            <div className="mt-6 sm:mt-7">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-600">
-                  {text.ambientSound}
-                </p>
+            <div className="mt-6 rounded-[24px] border border-white/5 bg-white/[0.025] p-3.5 sm:mt-7 sm:p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-gray-500">
+                    {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+                  </span>
+                  <p className="truncate text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">
+                    {text.ambientSound}
+                  </p>
+                </div>
 
                 <button
                   type="button"
                   aria-label={soundEnabled ? `${text.ambientSound} ${text.off}` : `${text.ambientSound} ${text.on}`}
                   onClick={() => setSoundEnabled((prev) => !prev)}
-                  className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-2 text-xs font-bold text-gray-400 hover:text-white"
+                  className={`shrink-0 rounded-full px-3 py-2 text-xs font-black transition-colors ${
+                    soundEnabled
+                      ? "bg-[#7C9EFF]/15 text-[#AFC2FF]"
+                      : "bg-white/5 text-gray-500 hover:text-white"
+                  }`}
                 >
-                  {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
                   {soundEnabled ? text.on : text.off}
                 </button>
               </div>

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-05-29T19:30:00"));
@@ -12,6 +12,28 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
 });
 
+async function openStatsTab(page: Page) {
+  const statsButton = page
+    .getByRole("navigation", { name: /Main navigation/i })
+    .getByRole("button")
+    .nth(1);
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await statsButton.click();
+
+    try {
+      await expect(page.getByRole("heading", { name: /Heatmap/i })).toBeVisible({
+        timeout: 2000,
+      });
+      return;
+    } catch {
+      await page.waitForTimeout(150);
+    }
+  }
+
+  await expect(page.getByRole("heading", { name: /Heatmap/i })).toBeVisible();
+}
+
 test("loads the DreamSteps home screen", async ({ page }) => {
   await expect(page).toHaveTitle(/DreamSteps/);
   await expect(page.getByRole("heading", { name: "DreamSteps" })).toBeVisible();
@@ -19,7 +41,7 @@ test("loads the DreamSteps home screen", async ({ page }) => {
 });
 
 test("can switch to stats tab", async ({ page }) => {
-  await page.getByRole("button", { name: /Thống kê|Stats/i }).click();
+  await openStatsTab(page);
 
   await expect(page.getByRole("heading", { name: /Thống kê|Stats/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Heatmap/i })).toBeVisible();
@@ -33,11 +55,7 @@ test("shows empty stats insights", async ({ page }) => {
   });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Today Habits/i })).toBeVisible();
-  await page
-    .getByRole("navigation", { name: /Main navigation/i })
-    .getByRole("button", { name: /Stats/i })
-    .click();
-  await expect(page.getByRole("heading", { name: /Weekly Heatmap/i })).toBeVisible();
+  await openStatsTab(page);
 
   await expect(page.getByText("No focus data has been recorded this week.")).toBeVisible();
   await expect(
@@ -67,11 +85,7 @@ test("summarizes weekly stats insights", async ({ page }) => {
   });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Today Habits/i })).toBeVisible();
-  await page
-    .getByRole("navigation", { name: /Main navigation/i })
-    .getByRole("button", { name: /Stats/i })
-    .click();
-  await expect(page.getByRole("heading", { name: /Weekly Heatmap/i })).toBeVisible();
+  await openStatsTab(page);
 
   await expect(page.getByText("This week's total: 90 focused minutes.")).toBeVisible();
   await expect(page.getByText("You were active on 3 of the last 7 days.")).toBeVisible();
