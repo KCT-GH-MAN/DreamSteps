@@ -2613,6 +2613,7 @@ export default function HomePage() {
                 
                 
                 minutesLabel={t.common.shortMinutes}
+                actionLabel={t.habits.startFocus}
                 
                 suggestedSession={suggestedSession}
                 
