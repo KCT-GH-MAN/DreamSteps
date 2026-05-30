@@ -728,13 +728,48 @@ test("completes a habit when its focus session finishes", async ({ page }) => {
   await page.goto("/?testFocus=1");
 
   await page.getByRole("button", { name: /Bắt đầu tập trung|Start Focus Session/i }).first().click();
-  await page.getByRole("button", { name: /Bắt đầu phiên focus|Start focus session/i }).click();
+  await page.getByRole("button", { name: /Tiếp tục|Play/i }).click();
   await expect(page.getByText(/Bạn đã làm được rồi|You did it/i)).toBeVisible({
     timeout: 5000,
   });
   await page.getByRole("button", { name: /Tiếp tục nào|Keep going/i }).click();
 
   await expect(page.getByRole("button", { name: /Hoàn thành thói quen|Complete habit/i }).first()).toHaveClass(/text-\[#7EE2B8\]/);
+});
+
+test("focus session modal fits a fold cover viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 402, height: 986 });
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Start Focus Session/i }).first().click();
+
+  const dialog = page.getByRole("dialog");
+
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/Just begin/i)).toBeVisible();
+  await expect(dialog.getByRole("button", { name: /Play/i })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: /Reset/i })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: /Rain/i })).toBeVisible();
+
+  const metrics = await dialog.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+
+    return {
+      height: rect.height,
+      width: rect.width,
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(metrics.height).toBeLessThanOrEqual(metrics.viewportHeight);
+  expect(metrics.width).toBeLessThanOrEqual(metrics.viewportWidth);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
 });
 
 test("home screen visual snapshot", async ({ page }) => {
