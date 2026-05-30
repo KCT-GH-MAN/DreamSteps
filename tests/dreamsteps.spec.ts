@@ -36,6 +36,76 @@ test("can edit an existing habit", async ({ page }) => {
   await expect(page.getByText(/15/)).toBeVisible();
 });
 
+test("habit sheet stays stable on fold and large phone viewports", async ({ page }) => {
+  const viewports = [
+    { name: "fold cover", width: 402, height: 986 },
+    { name: "large phone", width: 440, height: 956 },
+  ];
+
+  for (const viewport of viewports) {
+    await test.step(viewport.name, async () => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await page.goto("/");
+      await page.addStyleTag({
+        content: `
+          *, *::before, *::after {
+            animation-duration: 0s !important;
+            animation-delay: 0s !important;
+            transition-duration: 0s !important;
+            scroll-behavior: auto !important;
+          }
+        `,
+      });
+
+      await page.getByRole("button", { name: /Thêm thói quen mới|Add a new habit/i }).click();
+      const dialog = page.getByRole("dialog", { name: /Thói quen mới|New Habit/i });
+
+      await expect(dialog).toBeVisible();
+      await page.waitForTimeout(900);
+
+      const measureDialog = async () => {
+        return dialog.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+
+          return {
+            height: rect.height,
+            scrollHeight: element.scrollHeight,
+            clientHeight: element.clientHeight,
+            overflowY: style.overflowY,
+          };
+        });
+      };
+
+      const daily = await measureDialog();
+
+      await dialog.getByRole("button", { name: /Hằng tuần|Weekly/i }).click();
+      const weekly = await measureDialog();
+
+      await dialog.getByRole("button", { name: /Hằng tháng|Monthly/i }).click();
+      const monthly = await measureDialog();
+
+      await expect(dialog.getByRole("button", { name: /Choose month day 29/i })).toBeVisible();
+      await dialog.getByRole("button", { name: /Next month day/i }).click();
+      await expect(dialog.getByRole("button", { name: /Choose month day 30/i })).toBeVisible();
+
+      const text = await dialog.innerText();
+      expect(text).not.toMatch(/\b1\s+2\s+3\s+4\s+5\s+6\s+7\s+8\s+9\s+10\b/);
+
+      for (const metrics of [daily, weekly, monthly]) {
+        expect(metrics.overflowY).toBe("hidden");
+        expect(metrics.scrollHeight).toBe(metrics.clientHeight);
+        expect(metrics.height).toBeLessThanOrEqual(viewport.height - 8);
+      }
+
+      expect(Math.abs(daily.height - weekly.height)).toBeLessThanOrEqual(1);
+      expect(Math.abs(daily.height - monthly.height)).toBeLessThanOrEqual(1);
+
+      await page.mouse.click(10, 10);
+    });
+  }
+});
+
 test("records and shows habit history", async ({ page }) => {
   await page.getByRole("button", { name: /Hoàn thành thói quen|Complete habit/i }).first().click();
   await page.getByRole("button", { name: /Xem lịch sử|View history/i }).first().click();

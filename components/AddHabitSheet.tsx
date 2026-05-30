@@ -191,7 +191,7 @@ export default function AddHabitSheet<IconName extends string>({
               ))}
             </div>
 
-            <div className="mb-4 min-h-[134px]">
+            <div className="mb-4 h-[134px]">
               {newFrequency === "weekly" && (
                 <>
                   <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-gray-500">
