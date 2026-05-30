@@ -36,6 +36,125 @@ test("can edit an existing habit", async ({ page }) => {
   await expect(page.getByText(/15/)).toBeVisible();
 });
 
+test("edit habit sheet stays stable on fold and large phone viewports", async ({ page }) => {
+  const monthlyHabit = {
+    id: 4101,
+    title: "Month close",
+    iconName: "BookOpen",
+    minutes: 25,
+    completed: false,
+    frequency: "monthly",
+    daysOfWeek: [],
+    daysOfMonth: [31],
+  };
+  const viewports = [
+    { name: "fold cover", width: 402, height: 986 },
+    { name: "large phone", width: 440, height: 956 },
+  ];
+
+  for (const viewport of viewports) {
+    await test.step(viewport.name, async () => {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await page.clock.setFixedTime(new Date("2026-05-31T08:30:00"));
+      await page.goto("/");
+      await page.evaluate((habit) => {
+        window.localStorage.setItem("ds-language", "en");
+        window.localStorage.setItem("ds-welcome-seen", "true");
+        window.localStorage.setItem("ds-last-active", "2026-05-31");
+        window.localStorage.setItem("ds-habits", JSON.stringify([habit]));
+      }, monthlyHabit);
+      await page.reload();
+      await page.addStyleTag({
+        content: `
+          *, *::before, *::after {
+            animation-duration: 0s !important;
+            animation-delay: 0s !important;
+            transition-duration: 0s !important;
+            scroll-behavior: auto !important;
+          }
+        `,
+      });
+
+      await page.getByRole("button", { name: /Edit Habit Month close/i }).click();
+      const dialog = page.getByRole("dialog", { name: /Edit Habit/i });
+
+      await expect(dialog).toBeVisible();
+      await page.waitForTimeout(900);
+      await expect(dialog.getByRole("button", { name: /Choose month day 31/i })).toBeVisible();
+
+      const measureDialog = async () => {
+        return dialog.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const style = window.getComputedStyle(element);
+
+          return {
+            height: rect.height,
+            scrollHeight: element.scrollHeight,
+            clientHeight: element.clientHeight,
+            overflowY: style.overflowY,
+          };
+        });
+      };
+
+      const monthly = await measureDialog();
+
+      await dialog.getByRole("button", { name: /Daily/i }).click();
+      const daily = await measureDialog();
+
+      await dialog.getByRole("button", { name: /Weekly/i }).click();
+      const weekly = await measureDialog();
+
+      await dialog.getByRole("button", { name: /Monthly/i }).click();
+      const monthlyAgain = await measureDialog();
+
+      for (const metrics of [monthly, daily, weekly, monthlyAgain]) {
+        expect(metrics.overflowY).toBe("hidden");
+        expect(metrics.scrollHeight).toBe(metrics.clientHeight);
+        expect(metrics.height).toBeLessThanOrEqual(viewport.height - 8);
+      }
+
+      expect(Math.abs(monthly.height - daily.height)).toBeLessThanOrEqual(1);
+      expect(Math.abs(monthly.height - weekly.height)).toBeLessThanOrEqual(1);
+      expect(Math.abs(monthly.height - monthlyAgain.height)).toBeLessThanOrEqual(1);
+
+      await page.mouse.click(10, 10);
+    });
+  }
+});
+
+test("validates the edit habit schedule before saving", async ({ page }) => {
+  const weeklyHabit = {
+    id: 4201,
+    title: "Weekly planning",
+    iconName: "BookOpen",
+    minutes: 20,
+    completed: false,
+    frequency: "weekly",
+    daysOfWeek: [5],
+    daysOfMonth: [],
+  };
+
+  await page.evaluate((habit) => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem("ds-habits", JSON.stringify([habit]));
+  }, weeklyHabit);
+  await page.reload();
+
+  await page.getByRole("button", { name: /Edit Habit Weekly planning/i }).click();
+  const dialog = page.getByRole("dialog", { name: /Edit Habit/i });
+  const saveButton = dialog.getByRole("button", { name: /Save Changes/i });
+
+  await expect(dialog).toBeVisible();
+  await expect(saveButton).toBeEnabled();
+
+  await dialog.getByRole("button", { name: "Fri" }).click();
+  await expect(saveButton).toBeDisabled();
+
+  await dialog.getByRole("button", { name: "Fri" }).click();
+  await expect(saveButton).toBeEnabled();
+});
+
 test("habit sheet stays stable on fold and large phone viewports", async ({ page }) => {
   const viewports = [
     { name: "fold cover", width: 402, height: 986 },

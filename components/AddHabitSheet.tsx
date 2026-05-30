@@ -77,7 +77,13 @@ export default function AddHabitSheet<IconName extends string>({
   const hasTitle = newTitle.trim().length > 0;
   const hasValidMinutes =
     Number.isInteger(minutesValue) && minutesValue >= 1 && minutesValue <= 999;
-  const canSubmit = hasTitle && hasValidMinutes;
+  const hasScheduleSelection =
+    newFrequency === "weekly"
+      ? newDaysOfWeek.length > 0
+      : newFrequency === "monthly"
+        ? newDaysOfMonth.length > 0
+        : true;
+  const canSubmit = hasTitle && hasValidMinutes && hasScheduleSelection;
   const nearbyMonthDays =
     monthDays.length > 0
       ? Array.from({ length: 7 }, (_, index) => {

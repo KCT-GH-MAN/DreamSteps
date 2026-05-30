@@ -1561,26 +1561,16 @@ export default function HomePage() {
     const minutes = Number(newMinutes);
     if (!Number.isInteger(minutes) || minutes < 1 || minutes > 999) return;
 
-    const fallbackWeekDay = new Date().getDay();
-    const fallbackMonthDay = new Date().getDate();
+    if (newFrequency === "weekly" && newDaysOfWeek.length === 0) return;
+    if (newFrequency === "monthly" && newDaysOfMonth.length === 0) return;
 
     const habitValues = {
       title,
       iconName: newIcon,
       minutes,
       frequency: newFrequency,
-      daysOfWeek:
-        newFrequency === "weekly"
-          ? newDaysOfWeek.length > 0
-            ? newDaysOfWeek
-            : [fallbackWeekDay]
-          : [],
-      daysOfMonth:
-        newFrequency === "monthly"
-          ? newDaysOfMonth.length > 0
-            ? [newDaysOfMonth[0]]
-            : [fallbackMonthDay]
-          : [],
+      daysOfWeek: newFrequency === "weekly" ? newDaysOfWeek : [],
+      daysOfMonth: newFrequency === "monthly" ? [newDaysOfMonth[0]] : [],
     };
 
     if (editingHabitId !== null) {
