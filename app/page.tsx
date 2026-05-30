@@ -1544,7 +1544,8 @@ export default function HomePage() {
     const title = newTitle.trim();
     if (!title) return;
 
-    const minutes = Math.max(1, parseInt(newMinutes, 10) || 10);
+    const minutes = Number(newMinutes);
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 999) return;
 
     const fallbackWeekDay = new Date().getDay();
     const fallbackMonthDay = new Date().getDate();

@@ -106,6 +106,33 @@ test("habit sheet stays stable on fold and large phone viewports", async ({ page
   }
 });
 
+test("validates the add habit form before submit", async ({ page }) => {
+  await page.getByRole("button", { name: /Thêm thói quen mới|Add a new habit/i }).click();
+
+  const dialog = page.getByRole("dialog", { name: /Thói quen mới|New Habit/i });
+  const titleInput = dialog.locator("input").first();
+  const minutesInput = dialog.locator('input[type="number"]');
+  const submitButton = dialog.getByRole("button", { name: /Tạo thói quen|Create Habit/i });
+
+  await expect(dialog).toBeVisible();
+  await expect(titleInput).toBeFocused();
+  await expect(submitButton).toBeDisabled();
+
+  await titleInput.fill("   ");
+  await minutesInput.fill("10");
+  await expect(submitButton).toBeDisabled();
+
+  await titleInput.fill("Write notes");
+  await minutesInput.fill("0");
+  await expect(submitButton).toBeDisabled();
+
+  await minutesInput.fill("15");
+  await expect(submitButton).toBeEnabled();
+
+  await submitButton.click();
+  await expect(page.getByText("Write notes")).toBeVisible();
+});
+
 test("records and shows habit history", async ({ page }) => {
   await page.getByRole("button", { name: /Hoàn thành thói quen|Complete habit/i }).first().click();
   await page.getByRole("button", { name: /Xem lịch sử|View history/i }).first().click();

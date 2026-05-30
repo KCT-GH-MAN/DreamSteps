@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 import type { ComponentType } from "react";
 
 type HabitFrequency = "daily" | "weekly" | "monthly";
@@ -68,9 +69,15 @@ export default function AddHabitSheet<IconName extends string>({
   onToggleMonthDay,
   onSubmit,
 }: AddHabitSheetProps<IconName>) {
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
   const selectedMonthDay = newDaysOfMonth[0] ?? new Date().getDate();
   const firstMonthDay = monthDays[0] ?? 1;
   const lastMonthDay = monthDays.at(-1) ?? 31;
+  const minutesValue = Number(newMinutes);
+  const hasTitle = newTitle.trim().length > 0;
+  const hasValidMinutes =
+    Number.isInteger(minutesValue) && minutesValue >= 1 && minutesValue <= 999;
+  const canSubmit = hasTitle && hasValidMinutes;
   const nearbyMonthDays =
     monthDays.length > 0
       ? Array.from({ length: 7 }, (_, index) => {
@@ -95,6 +102,16 @@ export default function AddHabitSheet<IconName extends string>({
 
     onToggleMonthDay(nextDay);
   };
+
+  useEffect(() => {
+    if (!open) return;
+
+    const focusTimer = window.setTimeout(() => {
+      titleInputRef.current?.focus();
+    }, 260);
+
+    return () => window.clearTimeout(focusTimer);
+  }, [open]);
 
   return (
     <AnimatePresence>
@@ -155,18 +172,22 @@ export default function AddHabitSheet<IconName extends string>({
             </div>
 
             <input
+              ref={titleInputRef}
               className="mb-3 h-12 w-full rounded-2xl bg-white/5 px-5 text-[15px] focus:outline-none focus:ring-2 focus:ring-[#7C9EFF] sm:h-[52px]"
               placeholder={labels.titlePlaceholder}
               value={newTitle}
+              aria-invalid={!hasTitle}
               onChange={(event) => onChangeTitle(event.target.value)}
             />
 
             <input
               type="number"
               min={1}
+              max={999}
               className="mb-4 h-12 w-full rounded-2xl bg-white/5 px-5 text-[15px] [appearance:textfield] focus:outline-none focus:ring-2 focus:ring-[#7C9EFF] sm:h-[52px] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               placeholder={labels.minutesPlaceholder}
               value={newMinutes}
+              aria-invalid={!hasValidMinutes}
               onChange={(event) => onChangeMinutes(event.target.value)}
             />
 
@@ -318,7 +339,8 @@ export default function AddHabitSheet<IconName extends string>({
             <button
               type="button"
               onClick={onSubmit}
-              className="mt-5 w-full rounded-[20px] bg-[#7C9EFF] py-4 text-base font-black tracking-wide shadow-[0_10px_30px_rgba(124,158,255,0.3)] transition-all hover:brightness-110 active:scale-[0.99]"
+              disabled={!canSubmit}
+              className="mt-5 w-full rounded-[20px] bg-[#7C9EFF] py-4 text-base font-black tracking-wide shadow-[0_10px_30px_rgba(124,158,255,0.3)] transition-all hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-gray-500 disabled:shadow-none disabled:hover:brightness-100"
             >
               {isEditing ? labels.saveHabit : labels.createHabit}
             </button>
