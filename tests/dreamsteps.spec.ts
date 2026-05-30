@@ -25,6 +25,49 @@ test("can switch to stats tab", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /Heatmap/i })).toBeVisible();
 });
 
+test("shows empty stats insights", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem("ds-analytics", JSON.stringify({ days: [] }));
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Stats/i }).click();
+
+  await expect(page.getByText("No focus data has been recorded this week.")).toBeVisible();
+  await expect(
+    page.getByText("No completed habits have been logged for progress yet.")
+  ).toBeVisible();
+  await expect(page.getByText("Start with one 10-minute session or one small habit.")).toBeVisible();
+  await expect(page.getByText("0m", { exact: true })).toBeVisible();
+  await expect(page.getByText("15m", { exact: true })).toBeVisible();
+  await expect(page.getByText("30m", { exact: true })).toBeVisible();
+  await expect(page.getByText("45m+", { exact: true })).toBeVisible();
+});
+
+test("summarizes weekly stats insights", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem(
+      "ds-analytics",
+      JSON.stringify({
+        days: [
+          { date: "2026-05-25", focusedMinutes: 30, completedHabits: 2 },
+          { date: "2026-05-27", focusedMinutes: 45, completedHabits: 1 },
+          { date: "2026-05-29", focusedMinutes: 15, completedHabits: 0 },
+        ],
+      })
+    );
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Stats/i }).click();
+
+  await expect(page.getByText("This week's total: 90 focused minutes.")).toBeVisible();
+  await expect(page.getByText("You were active on 3 of the last 7 days.")).toBeVisible();
+  await expect(page.getByText("You completed 3 habits this week.")).toBeVisible();
+});
+
 test("can edit an existing habit", async ({ page }) => {
   await page.getByRole("button", { name: /Sửa thói quen|Edit habit/i }).first().click();
 

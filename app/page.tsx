@@ -1253,6 +1253,40 @@ function getWeeklyStats(analytics: AnalyticsData) {
   };
 }
 
+function getStatsInsightItems(
+  weeklyStats: ReturnType<typeof getWeeklyStats>,
+  t: ReturnType<typeof useLanguage>["t"]
+) {
+  if (
+    weeklyStats.totalMinutes === 0 &&
+    weeklyStats.totalHabits === 0 &&
+    weeklyStats.activeDays === 0
+  ) {
+    return [
+      t.stats.insightEmptyFocus,
+      t.stats.insightEmptyHabit,
+      t.stats.insightEmptyStart,
+    ];
+  }
+
+  return [
+    t.stats.insightWeeklyMinutes.replace(
+      "{minutes}",
+      String(weeklyStats.totalMinutes)
+    ),
+    t.stats.insightActiveDays.replace(
+      "{days}",
+      String(weeklyStats.activeDays)
+    ),
+    weeklyStats.totalHabits > 0
+      ? t.stats.insightHabitsDone.replace(
+          "{habits}",
+          String(weeklyStats.totalHabits)
+        )
+      : t.stats.insightNoHabitsDone,
+  ];
+}
+
 function getHeatmapIntensity(minutes: number) {
   if (minutes === 0) return "bg-white/5";
   if (minutes < 20) return "bg-[#7C9EFF]/30";
@@ -1571,6 +1605,10 @@ export default function HomePage() {
   const weeklyStats = useMemo(
     () => getWeeklyStats(analytics),
     [analytics]
+  );
+  const statsInsightItems = useMemo(
+    () => getStatsInsightItems(weeklyStats, t),
+    [weeklyStats, t]
   );
 
   const weekDays = useMemo(() => getWeekDays(language), [language]);
@@ -2746,16 +2784,20 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-6 flex items-center justify-between text-xs text-gray-600">
-                  <span>{t.common.low}</span>
+                  <span>{t.stats.heatmapLegendZero}</span>
 
-                  <div className="flex gap-3 items-start">
-                    <div className="h-3 w-3 rounded-full bg-white/5" />
-                    <div className="h-3 w-3 rounded-full bg-[#7C9EFF]/30" />
-                    <div className="h-3 w-3 rounded-full bg-[#7C9EFF]/60" />
-                    <div className="h-3 w-3 rounded-full bg-[#7C9EFF]" />
+                  <div className="flex items-center gap-2">
+                    {[
+                      { label: t.stats.heatmapLegendLight, className: "bg-[#7C9EFF]/30" },
+                      { label: t.stats.heatmapLegendMedium, className: "bg-[#7C9EFF]/60" },
+                      { label: t.stats.heatmapLegendStrong, className: "bg-[#7C9EFF]" },
+                    ].map((item) => (
+                      <span key={item.label} className="flex items-center gap-1">
+                        <span className={`h-3 w-3 rounded-full ${item.className}`} />
+                        <span>{item.label}</span>
+                      </span>
+                    ))}
                   </div>
-
-                  <span>{t.common.high}</span>
                 </div>
               </div>
 
@@ -2779,6 +2821,17 @@ export default function HomePage() {
                         ? t.stats.reviewPositive
                         : t.stats.reviewSubtitle}
                     </p>
+
+                    <div className="mt-5 grid gap-2">
+                      {statsInsightItems.map((item) => (
+                        <div
+                          key={item}
+                          className="rounded-2xl border border-white/5 bg-white/[0.035] px-4 py-3 text-sm font-bold leading-relaxed text-gray-300"
+                        >
+                          {item}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
