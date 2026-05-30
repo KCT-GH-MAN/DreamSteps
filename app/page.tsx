@@ -2548,6 +2548,44 @@ export default function HomePage() {
                 </motion.div>
               )}
 
+              <div className={`mt-5 rounded-[28px] border p-4 ${todayStatus.tone} sm:p-5`}>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.07] text-white/90">
+                    <TodayStatusIcon size={21} />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/45">
+                          {language === "vi" ? "Trạng thái hôm nay" : "Today's status"}
+                        </p>
+                        <h3 className="mt-1 text-base font-black leading-tight text-white sm:text-lg">
+                          {todayStatus.title}
+                        </h3>
+                      </div>
+
+                      <div className="shrink-0 rounded-full bg-black/15 px-3 py-1 text-xs font-black text-white/70">
+                        {completedTodayCount}/{todayHabits.length}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/20">
+                      <motion.div
+                        initial={false}
+                        animate={{ width: `${todayProgressPercent}%` }}
+                        transition={{ type: "spring", stiffness: 180, damping: 24 }}
+                        className={`h-full rounded-full ${todayStatus.accent}`}
+                      />
+                    </div>
+
+                    <p className="mt-3 text-sm font-semibold leading-relaxed text-white/70">
+                      {todayStatus.message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <ReflectionCard
                 type="morning"
                 title={t.reflection.morningTitle}
@@ -2595,45 +2633,7 @@ export default function HomePage() {
 
 
 
-              <div className={`mt-5 rounded-[28px] border p-4 ${todayStatus.tone} sm:p-5`}>
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/[0.07] text-white/90">
-                    <TodayStatusIcon size={21} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/45">
-                          {language === "vi" ? "Trạng thái hôm nay" : "Today's status"}
-                        </p>
-                        <h3 className="mt-1 text-base font-black leading-tight text-white sm:text-lg">
-                          {todayStatus.title}
-                        </h3>
-                      </div>
-
-                      <div className="shrink-0 rounded-full bg-black/15 px-3 py-1 text-xs font-black text-white/70">
-                        {completedTodayCount}/{todayHabits.length}
-                      </div>
-                    </div>
-
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/20">
-                      <motion.div
-                        initial={false}
-                        animate={{ width: `${todayProgressPercent}%` }}
-                        transition={{ type: "spring", stiffness: 180, damping: 24 }}
-                        className={`h-full rounded-full ${todayStatus.accent}`}
-                      />
-                    </div>
-
-                    <p className="mt-3 text-sm font-semibold leading-relaxed text-white/70">
-                      {todayStatus.message}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <section className="mt-8 sm:mt-12">
+              <section className="mt-7 sm:mt-10">
                 <div className="mb-4 flex items-center justify-between sm:mb-6">
                   <h3 className="text-xl font-black">{t.habits.today}</h3>
                   <div className="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-gray-500">
