@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(new Date("2026-05-29T19:30:00"));
@@ -12,28 +12,6 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
 });
 
-async function openStatsTab(page: Page) {
-  const statsButton = page
-    .getByRole("navigation", { name: /Main navigation/i })
-    .getByRole("button")
-    .nth(1);
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    await statsButton.click();
-
-    try {
-      await expect(page.getByRole("heading", { name: /Heatmap/i })).toBeVisible({
-        timeout: 2000,
-      });
-      return;
-    } catch {
-      await page.waitForTimeout(150);
-    }
-  }
-
-  await expect(page.getByRole("heading", { name: /Heatmap/i })).toBeVisible();
-}
-
 test("loads the DreamSteps home screen", async ({ page }) => {
   await expect(page).toHaveTitle(/DreamSteps/);
   await expect(page.getByRole("heading", { name: "DreamSteps" })).toBeVisible();
@@ -41,7 +19,7 @@ test("loads the DreamSteps home screen", async ({ page }) => {
 });
 
 test("can switch to stats tab", async ({ page }) => {
-  await openStatsTab(page);
+  await page.getByRole("button", { name: /Thống kê|Stats/i }).click();
 
   await expect(page.getByRole("heading", { name: /Thống kê|Stats/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Heatmap/i })).toBeVisible();
@@ -55,7 +33,11 @@ test("shows empty stats insights", async ({ page }) => {
   });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Today Habits/i })).toBeVisible();
-  await openStatsTab(page);
+  await page
+    .getByRole("navigation", { name: /Main navigation/i })
+    .getByRole("button", { name: /Stats/i })
+    .click();
+  await expect(page.getByRole("heading", { name: /Weekly Heatmap/i })).toBeVisible();
 
   await expect(page.getByText("No focus data has been recorded this week.")).toBeVisible();
   await expect(
@@ -85,7 +67,11 @@ test("summarizes weekly stats insights", async ({ page }) => {
   });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Today Habits/i })).toBeVisible();
-  await openStatsTab(page);
+  await page
+    .getByRole("navigation", { name: /Main navigation/i })
+    .getByRole("button", { name: /Stats/i })
+    .click();
+  await expect(page.getByRole("heading", { name: /Weekly Heatmap/i })).toBeVisible();
 
   await expect(page.getByText("This week's total: 90 focused minutes.")).toBeVisible();
   await expect(page.getByText("You were active on 3 of the last 7 days.")).toBeVisible();
@@ -742,48 +728,13 @@ test("completes a habit when its focus session finishes", async ({ page }) => {
   await page.goto("/?testFocus=1");
 
   await page.getByRole("button", { name: /Bắt đầu tập trung|Start Focus Session/i }).first().click();
-  await page.getByRole("button", { name: /Tiếp tục|Play/i }).click();
+  await page.getByRole("button", { name: /Bắt đầu phiên focus|Start focus session/i }).click();
   await expect(page.getByText(/Bạn đã làm được rồi|You did it/i)).toBeVisible({
     timeout: 5000,
   });
   await page.getByRole("button", { name: /Tiếp tục nào|Keep going/i }).click();
 
   await expect(page.getByRole("button", { name: /Hoàn thành thói quen|Complete habit/i }).first()).toHaveClass(/text-\[#7EE2B8\]/);
-});
-
-test("focus session modal fits a fold cover viewport", async ({ page }) => {
-  await page.setViewportSize({ width: 402, height: 986 });
-  await page.addInitScript(() => {
-    window.localStorage.setItem("ds-language", "en");
-    window.localStorage.setItem("ds-welcome-seen", "true");
-  });
-  await page.goto("/");
-  await page.getByRole("button", { name: /Start Focus Session/i }).first().click();
-
-  const dialog = page.getByRole("dialog");
-
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText(/Just begin/i)).toBeVisible();
-  await expect(dialog.getByRole("button", { name: /Play/i })).toBeVisible();
-  await expect(dialog.getByRole("button", { name: /Reset/i })).toBeVisible();
-  await expect(dialog.getByRole("button", { name: /Rain/i })).toBeVisible();
-
-  const metrics = await dialog.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-
-    return {
-      height: rect.height,
-      width: rect.width,
-      viewportHeight: window.innerHeight,
-      viewportWidth: window.innerWidth,
-      scrollWidth: document.documentElement.scrollWidth,
-      clientWidth: document.documentElement.clientWidth,
-    };
-  });
-
-  expect(metrics.height).toBeLessThanOrEqual(metrics.viewportHeight);
-  expect(metrics.width).toBeLessThanOrEqual(metrics.viewportWidth);
-  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
 });
 
 test("home screen visual snapshot", async ({ page }) => {

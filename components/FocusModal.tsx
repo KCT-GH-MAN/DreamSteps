@@ -467,7 +467,7 @@ export default function FocusModal({
 
   return (
     <AnimatePresence mode="wait">
-      <div key="focus-modal-root" className="fixed inset-0 z-[9998] flex items-end justify-center p-0 sm:items-center sm:p-6">
+      <div key="focus-modal-root" className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -477,42 +477,37 @@ export default function FocusModal({
         />
 
         <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-label={title || localizedSessionLabel}
           initial={{ scale: 0.85, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.85, opacity: 0, y: 20 }}
           className={`relative ${APP_THEMES[appTheme as keyof typeof APP_THEMES]?.card || "bg-[#171A21]"} w-full ${
   deepFocus ? "max-w-2xl" : "max-w-sm md:max-w-lg"
-} max-h-[92dvh] overflow-y-auto rounded-t-[34px] border border-white/10 px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-4 text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)] sm:max-h-[calc(100dvh-24px)] sm:rounded-[40px] sm:p-6 md:p-8`}
+} max-h-[calc(100dvh-24px)] overflow-y-auto rounded-[30px] border border-white/10 p-4 text-center shadow-[0_30px_60px_rgba(0,0,0,0.5)] sm:rounded-[40px] sm:p-6 md:p-8`}
         >
           {!showCompliment && (
-            <div className="absolute right-4 top-4 z-10 flex gap-2 sm:right-8 sm:top-8">
+            <div className="absolute right-5 top-5 z-10 flex gap-2 sm:right-8 sm:top-8">
               <button
                 type="button"
                 aria-label={deepFocus ? text.deepFocusOff : text.deepFocusOn}
                 onClick={() => setDeepFocus((prev) => !prev)}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-gray-500 transition-colors hover:bg-white/10 hover:text-white"
+                className="p-1 text-gray-600 transition-colors hover:text-white"
               >
-                {deepFocus ? <Maximize2 size={19} /> : <Minimize2 size={19} />}
+                {deepFocus ? <Maximize2 size={22} /> : <Minimize2 size={22} />}
               </button>
 
               <button
                 type="button"
                 aria-label={text.close}
                 onClick={handleClose}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-gray-500 transition-colors hover:bg-white/10 hover:text-white"
+                className="p-1 text-gray-600 transition-colors hover:text-white"
               >
-                <X size={20} />
+                <X size={25} />
               </button>
             </div>
           )}
 
-          <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/10 sm:hidden" />
-
           <span
-            className={`mx-auto block max-w-[calc(100%-6rem)] truncate text-[10px] font-black uppercase tracking-[0.3em] text-[#7C9EFF] ${
+            className={`text-[10px] font-black uppercase tracking-[0.3em] text-[#7C9EFF] ${
               deepFocus ? "opacity-0" : ""
             }`}
             title={title}
@@ -520,8 +515,8 @@ export default function FocusModal({
             {title === "Tiny Start" ? localizedSessionLabel : title || localizedSessionLabel}
           </span>
 
-          <div className="relative my-5 flex justify-center sm:my-9">
-            <div className="relative flex h-[min(54vw,204px)] w-[min(54vw,204px)] items-center justify-center sm:h-[236px] sm:w-[236px]">
+          <div className="relative my-6 flex justify-center sm:my-9">
+            <div className="relative flex h-[min(52vw,210px)] w-[min(52vw,210px)] items-center justify-center sm:h-[236px] sm:w-[236px]">
               <svg
                 viewBox="0 0 260 260"
                 className="absolute inset-0 h-full w-full -rotate-90"
@@ -549,7 +544,7 @@ export default function FocusModal({
               </svg>
 
               <div className="relative z-10 flex max-w-[210px] flex-col items-center justify-center text-center">
-                <div className="max-w-full whitespace-nowrap px-2 text-[44px] font-black italic leading-tight tracking-[-0.04em] text-white tabular-nums sm:text-[56px]">
+                <div className="max-w-full whitespace-nowrap px-2 text-[44px] font-black italic leading-tight tracking-[-0.08em] text-white tabular-nums sm:text-[56px]">
                   {formatTime(timeLeft)}
                 </div>
 
@@ -562,19 +557,19 @@ export default function FocusModal({
 
           {!showCompliment && (
             <>
-              <div className="mx-auto flex max-w-[220px] items-center justify-center gap-5">
+              <div className="flex items-center justify-center gap-5 sm:gap-6">
                 <button
                   type="button"
-                  aria-label={text.reset}
+                  aria-label="Reset phiên focus"
                   onClick={resetSession}
-                  className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-gray-500 transition-all hover:bg-white/10 hover:text-white"
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/5 text-gray-500 transition-all hover:bg-white/10 hover:text-white sm:h-12 sm:w-12"
                 >
                   <RotateCcw size={22} />
                 </button>
 
                 <button
                   type="button"
-                  aria-label={isActive ? text.pause : text.play}
+                  aria-label={isActive ? "Tạm dừng phiên focus" : "Bắt đầu phiên focus"}
                   onClick={() => setIsActive((prev) => !prev)}
                   className={`flex h-16 w-16 items-center justify-center rounded-[24px] transition-all shadow-xl sm:h-20 sm:w-20 sm:rounded-[28px] ${
                     isActive
@@ -588,41 +583,38 @@ export default function FocusModal({
                     <Play size={30} fill="currentColor" className="ml-1.5" />
                   )}
                 </button>
+
+                <div className="w-12" />
               </div>
 
               <p className="mt-5 rounded-2xl bg-white/5 px-4 py-2.5 text-xs font-bold leading-relaxed text-gray-500">
-                {text.startLine}
-              </p>
+  <span className="block">{text.startLine}</span>
+  <span className="block">
+    
+  </span>
+</p>
             </>
           )}
 
           {!deepFocus && !showCompliment && (
-            <div className="mt-6 rounded-[24px] border border-white/5 bg-white/[0.025] p-3.5 sm:mt-7 sm:p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-gray-500">
-                    {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-                  </span>
-                  <p className="truncate text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">
-                    {text.ambientSound}
-                  </p>
-                </div>
+            <div className="mt-7">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-600">
+                  {text.ambientSound}
+                </p>
 
                 <button
                   type="button"
-                  aria-label={soundEnabled ? `${text.ambientSound} ${text.off}` : `${text.ambientSound} ${text.on}`}
+                  aria-label="Bật tắt âm thanh"
                   onClick={() => setSoundEnabled((prev) => !prev)}
-                  className={`shrink-0 rounded-full px-3 py-2 text-xs font-black transition-colors ${
-                    soundEnabled
-                      ? "bg-[#7C9EFF]/15 text-[#AFC2FF]"
-                      : "bg-white/5 text-gray-500 hover:text-white"
-                  }`}
+                  className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-2 text-xs font-bold text-gray-400 hover:text-white"
                 >
+                  {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
                   {soundEnabled ? text.on : text.off}
                 </button>
               </div>
 
-              <div className="grid grid-cols-6 gap-2 sm:gap-3">
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
                 {AMBIENT_SOUNDS.map((sound) => {
                   const Icon = sound.icon;
                   const active = selectedSound === sound.id;
@@ -631,13 +623,12 @@ export default function FocusModal({
                     <button
   key={sound.id}
   type="button"
-  aria-label={sound.label}
   title={sound.label}
   onClick={() => {
     setSelectedSound(sound.id);
     setSoundEnabled(true);
   }}
-  className={`mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border transition-all sm:h-12 sm:w-12 ${
+  className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border transition-all ${
     active
       ? "border-[#7C9EFF] bg-[#7C9EFF]/20 text-white"
       : "border-white/5 bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white"
