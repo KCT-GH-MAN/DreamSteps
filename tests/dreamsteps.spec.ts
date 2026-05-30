@@ -56,14 +56,13 @@ test("edit habit sheet stays stable on fold and large phone viewports", async ({
     await test.step(viewport.name, async () => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.clock.setFixedTime(new Date("2026-05-31T08:30:00"));
-      await page.goto("/");
-      await page.evaluate((habit) => {
+      await page.addInitScript((habit) => {
         window.localStorage.setItem("ds-language", "en");
         window.localStorage.setItem("ds-welcome-seen", "true");
         window.localStorage.setItem("ds-last-active", "2026-05-31");
         window.localStorage.setItem("ds-habits", JSON.stringify([habit]));
       }, monthlyHabit);
-      await page.reload();
+      await page.goto("/");
       await page.addStyleTag({
         content: `
           *, *::before, *::after {
@@ -134,12 +133,13 @@ test("validates the edit habit schedule before saving", async ({ page }) => {
     daysOfMonth: [],
   };
 
-  await page.evaluate((habit) => {
+  await page.addInitScript((habit) => {
     window.localStorage.setItem("ds-language", "en");
     window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem("ds-last-active", "2026-05-29");
     window.localStorage.setItem("ds-habits", JSON.stringify([habit]));
   }, weeklyHabit);
-  await page.reload();
+  await page.goto("/");
 
   await page.getByRole("button", { name: /Edit Habit Weekly planning/i }).click();
   const dialog = page.getByRole("dialog", { name: /Edit Habit/i });
@@ -250,6 +250,52 @@ test("validates the add habit form before submit", async ({ page }) => {
 
   await submitButton.click();
   await expect(page.getByText("Write notes")).toBeVisible();
+});
+
+test("shows starter suggestions when no habits exist", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem("ds-last-active", "2026-05-29");
+    window.localStorage.setItem("ds-habits", JSON.stringify([]));
+  });
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: /Today Habits/i })).toBeVisible();
+  await expect(page.getByText("Start with one very small step")).toBeVisible();
+  await expect(page.getByText("Quick suggestions")).toBeVisible();
+
+  await page.getByRole("button", { name: /Read 10 minutes/i }).click();
+
+  const dialog = page.getByRole("dialog", { name: /New Habit/i });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("input").first()).toHaveValue("Read 10 minutes");
+  await expect(dialog.locator('input[type="number"]')).toHaveValue("10");
+});
+
+test("explains when existing habits are not scheduled today", async ({ page }) => {
+  const notDueHabit = {
+    id: 5101,
+    title: "Monday review",
+    iconName: "BookOpen",
+    minutes: 20,
+    completed: false,
+    frequency: "weekly",
+    daysOfWeek: [1],
+    daysOfMonth: [],
+  };
+
+  await page.addInitScript((habit) => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem("ds-last-active", "2026-05-29");
+    window.localStorage.setItem("ds-habits", JSON.stringify([habit]));
+  }, notDueHabit);
+  await page.goto("/");
+
+  await expect(page.getByText("Nothing is scheduled for today")).toBeVisible();
+  await expect(page.getByText("Not Today")).toBeVisible();
+  await expect(page.getByText("Monday review")).toBeVisible();
 });
 
 test("runs monthly habits on the last day of shorter months", async ({ page }) => {

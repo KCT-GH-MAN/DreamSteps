@@ -307,6 +307,22 @@ function getDefaultHabits(t: ReturnType<typeof useLanguage>["t"]): Habit[] {
   ];
 }
 
+type StarterHabitSuggestion = {
+  title: string;
+  minutes: string;
+  iconName: IconName;
+};
+
+function getStarterHabitSuggestions(
+  t: ReturnType<typeof useLanguage>["t"]
+): StarterHabitSuggestion[] {
+  return [
+    { title: t.habits.starterRead, minutes: "10", iconName: "BookOpen" },
+    { title: t.habits.starterWalk, minutes: "15", iconName: "Wind" },
+    { title: t.habits.starterJournal, minutes: "5", iconName: "Heart" },
+  ];
+}
+
 const STORAGE_KEYS = {
   habits: "ds-habits",
   momentum: "ds-momentum",
@@ -1290,6 +1306,7 @@ export default function HomePage() {
     [lastCompletedDate, t]
   );
   const focusSessions = useMemo(() => getFocusSessions(t), [t]);
+  const starterHabitSuggestions = useMemo(() => getStarterHabitSuggestions(t), [t]);
   const moods = useMemo(() => getMoods(t), [t]);
   const suggestedSessionType = useMemo(
     () => getSessionTypeByMood(dailyReflection.mood),
@@ -1351,6 +1368,7 @@ export default function HomePage() {
     setGreeting(getGreetingByHour(now.getHours(), t.greeting));
 
     const savedHabits = safeParseHabits(localStorage.getItem(STORAGE_KEYS.habits));
+    const hasSavedHabits = localStorage.getItem(STORAGE_KEYS.habits) !== null;
     const savedMomentum = Number(localStorage.getItem(STORAGE_KEYS.momentum) || 0);
     const savedStreak = Number(localStorage.getItem(STORAGE_KEYS.streak) || 0);
     const savedLastCompleted = localStorage.getItem(STORAGE_KEYS.lastCompleted);
@@ -1358,7 +1376,7 @@ export default function HomePage() {
 
     if (savedLastActive !== todayStr) {
       const resetHabits =
-        savedHabits.length > 0
+        hasSavedHabits
           ? savedHabits.map((habit) => ({
               ...habit,
               completed: false,
@@ -1369,7 +1387,7 @@ export default function HomePage() {
       localStorage.setItem(STORAGE_KEYS.habits, JSON.stringify(resetHabits));
       localStorage.setItem(STORAGE_KEYS.lastActive, todayStr);
     } else {
-      setHabits(savedHabits.length > 0 ? savedHabits : getDefaultHabits(t));
+      setHabits(hasSavedHabits ? savedHabits : getDefaultHabits(t));
     }
 
     if (savedLastCompleted) {
@@ -1455,7 +1473,7 @@ export default function HomePage() {
                 ...habit,
                 completed: false,
               }))
-            : getDefaultHabits(t);
+            : currentHabits;
 
         localStorage.setItem(STORAGE_KEYS.habits, JSON.stringify(resetHabits));
         localStorage.setItem(STORAGE_KEYS.lastActive, todayStr);
@@ -1525,6 +1543,15 @@ export default function HomePage() {
 
   const openAddHabitSheet = () => {
     resetHabitForm();
+    setIsAdding(true);
+  };
+
+  const openSuggestedHabitSheet = (suggestion: StarterHabitSuggestion) => {
+    resetHabitForm();
+    setNewTitle(suggestion.title);
+    setNewMinutes(suggestion.minutes);
+    setNewIcon(suggestion.iconName);
+    setNewFrequency("daily");
     setIsAdding(true);
   };
 
@@ -2178,14 +2205,68 @@ export default function HomePage() {
                 </div>
 
                 {todayHabits.length === 0 ? (
-                  <div className={`rounded-[32px] border border-white/5 ${currentTheme.surface} p-6 text-center`}>
-                    <CalendarDays size={28} className="mx-auto text-gray-500" />
-                    <p className="mt-3 text-sm font-bold text-gray-400">
-                      {t.habits.noHabitsToday}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-600">
-                      {getEmptyStateMessage(t)}
-                    </p>
+                  <div className={`rounded-[30px] border border-white/5 ${currentTheme.surface} p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] sm:p-6`}>
+                    <div className="flex items-start gap-4">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${currentTheme.accentBg} ${currentTheme.accentText}`}>
+                        <CalendarDays size={23} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-black leading-tight">
+                          {habits.length === 0
+                            ? t.habits.emptyNoHabitsTitle
+                            : t.habits.emptyNotDueTitle}
+                        </p>
+                        <p className="mt-1.5 text-sm font-semibold leading-relaxed text-gray-400">
+                          {habits.length === 0
+                            ? t.habits.emptyNoHabitsBody
+                            : t.habits.emptyNotDueBody}
+                        </p>
+                        <p className="mt-2 text-xs leading-relaxed text-gray-600">
+                          {getEmptyStateMessage(t)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {habits.length === 0 ? (
+                      <div className="mt-5">
+                        <p className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">
+                          {t.habits.starterSuggestions}
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-3">
+                          {starterHabitSuggestions.map((suggestion) => {
+                            const Icon = ICON_MAP[suggestion.iconName];
+
+                            return (
+                              <button
+                                key={suggestion.title}
+                                type="button"
+                                onClick={() => openSuggestedHabitSheet(suggestion)}
+                                className="flex min-h-12 items-center gap-3 rounded-2xl bg-white/[0.055] px-4 py-3 text-left transition-colors hover:bg-white/10"
+                              >
+                                <Icon size={18} className="shrink-0 text-gray-400" />
+                                <span className="min-w-0">
+                                  <span className="block truncate text-sm font-black text-white">
+                                    {suggestion.title}
+                                  </span>
+                                  <span className="block text-xs font-bold text-gray-500">
+                                    {suggestion.minutes} {t.common.shortMinutes}
+                                  </span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={openAddHabitSheet}
+                        className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-2xl bg-white/[0.06] px-4 text-sm font-black text-white transition-colors hover:bg-white/10"
+                      >
+                        <Plus size={17} />
+                        {t.habits.emptyNoHabitsCta}
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4">
