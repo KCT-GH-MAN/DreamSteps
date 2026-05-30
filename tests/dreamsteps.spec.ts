@@ -32,7 +32,11 @@ test("shows empty stats insights", async ({ page }) => {
     window.localStorage.setItem("ds-analytics", JSON.stringify({ days: [] }));
   });
   await page.goto("/");
-  await page.getByRole("button", { name: /Stats/i }).click();
+  await expect(page.getByRole("heading", { name: /Today Habits/i })).toBeVisible();
+  await page
+    .getByRole("navigation", { name: /Main navigation/i })
+    .getByRole("button", { name: /Stats/i })
+    .click();
   await expect(page.getByRole("heading", { name: /Weekly Heatmap/i })).toBeVisible();
 
   await expect(page.getByText("No focus data has been recorded this week.")).toBeVisible();
@@ -62,7 +66,11 @@ test("summarizes weekly stats insights", async ({ page }) => {
     );
   });
   await page.goto("/");
-  await page.getByRole("button", { name: /Stats/i }).click();
+  await expect(page.getByRole("heading", { name: /Today Habits/i })).toBeVisible();
+  await page
+    .getByRole("navigation", { name: /Main navigation/i })
+    .getByRole("button", { name: /Stats/i })
+    .click();
   await expect(page.getByRole("heading", { name: /Weekly Heatmap/i })).toBeVisible();
 
   await expect(page.getByText("This week's total: 90 focused minutes.")).toBeVisible();
@@ -458,6 +466,57 @@ test("records and shows habit history", async ({ page }) => {
   await expect(historyDialog.getByText(/Tổng phút|Total min/i)).toBeVisible();
   await expect(historyDialog.getByText(/14 ngày gần đây|Last 14 days/i)).toBeVisible();
   await expect(historyDialog.getByText("1").first()).toBeVisible();
+});
+
+test("shows an empty habit history sheet", async ({ page }) => {
+  const habit = {
+    id: 7201,
+    title: "Long habit title for detail sheet review",
+    iconName: "BookOpen",
+    minutes: 18,
+    completed: false,
+    frequency: "weekly",
+    daysOfWeek: [5],
+    daysOfMonth: [],
+  };
+
+  await page.setViewportSize({ width: 402, height: 986 });
+  await page.addInitScript((item) => {
+    window.localStorage.setItem("ds-language", "en");
+    window.localStorage.setItem("ds-welcome-seen", "true");
+    window.localStorage.setItem("ds-last-active", "2026-05-29");
+    window.localStorage.setItem("ds-habits", JSON.stringify([item]));
+    window.localStorage.setItem("ds-habit-history", JSON.stringify({}));
+  }, habit);
+  await page.goto("/");
+  await page.getByRole("button", { name: /View history Long habit title/i }).click();
+
+  const historyDialog = page.getByRole("dialog", {
+    name: /Habit History Long habit title/i,
+  });
+
+  await expect(historyDialog).toBeVisible();
+  await expect(historyDialog.getByText("Complete this habit to start building its history.")).toBeVisible();
+  await expect(historyDialog.getByText("Never completed")).toBeVisible();
+  await expect(historyDialog.getByText("14 days", { exact: true })).toBeVisible();
+  await expect(historyDialog.locator('[aria-label*="0 min"]').first()).toBeVisible();
+
+  const metrics = await historyDialog.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+
+    return {
+      height: rect.height,
+      width: rect.width,
+      viewportHeight: window.innerHeight,
+      viewportWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(metrics.height).toBeLessThanOrEqual(metrics.viewportHeight);
+  expect(metrics.width).toBeLessThanOrEqual(metrics.viewportWidth);
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
 });
 
 test("can export a data backup", async ({ page }) => {
