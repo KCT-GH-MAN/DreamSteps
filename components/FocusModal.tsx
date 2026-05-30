@@ -72,6 +72,8 @@ const FOCUS_MODAL_TEXT = {
     completionTitle: "Hoàn thành rồi.",
     completionSubtitle: "Một bước nhỏ vẫn được tính.",
     startLine: "Hãy bắt đầu. Đừng đợi tới khi cảm thấy sẵn sàng!",
+    runningLine: "Đang tập trung. Giữ nhịp này!",
+    pausedLine: "Đã tạm dừng. Quay lại khi sẵn sàng.",
     confirmClose: (minutesLeft: number) =>
       `Còn khoảng ${minutesLeft} phút nữa. Đừng bỏ cuộc!`,
   },
@@ -92,6 +94,8 @@ const FOCUS_MODAL_TEXT = {
     completionTitle: "Completed.",
     completionSubtitle: "A small step still counts.",
     startLine: "Just begin. No need to wait until you feel ready!",
+    runningLine: "Focused now. Keep the rhythm.",
+    pausedLine: "Paused. Resume when you're ready.",
     confirmClose: (minutesLeft: number) =>
       `About ${minutesLeft} minutes left. Don't give up!`,
   },
@@ -298,6 +302,12 @@ export default function FocusModal({
   const progress = totalSeconds === 0 ? 0 : 1 - timeLeft / totalSeconds;
   const circleRadius = 108;
   const circumference = 2 * Math.PI * circleRadius;
+  const hasStarted = timeLeft < totalSeconds;
+  const focusStatusLine = isActive
+    ? text.runningLine
+    : hasStarted
+    ? text.pausedLine
+    : text.startLine;
   const currentTheme = SESSION_THEMES[sessionType as keyof typeof SESSION_THEMES] ?? SESSION_THEMES.gentle;
   const localizedSessionLabel =
     language === "vi"
@@ -551,7 +561,11 @@ export default function FocusModal({
                 
               </div>
 
-              <div className={`absolute inset-0 ${currentTheme.glow} blur-[55px] rounded-full -z-10`} />
+              <div
+                className={`absolute inset-0 ${currentTheme.glow} rounded-full blur-[55px] transition-opacity duration-500 -z-10 ${
+                  isActive ? "opacity-100" : "opacity-55"
+                }`}
+              />
             </div>
           </div>
 
@@ -573,8 +587,8 @@ export default function FocusModal({
                   onClick={() => setIsActive((prev) => !prev)}
                   className={`flex h-16 w-16 items-center justify-center rounded-[24px] transition-all shadow-xl sm:h-20 sm:w-20 sm:rounded-[28px] ${
                     isActive
-                      ? "bg-white text-black scale-95"
-                      : "bg-[#7C9EFF] text-white shadow-[#7C9EFF]/30 scale-100"
+                      ? "scale-95 bg-white text-black shadow-white/10"
+                      : "scale-100 bg-[#7C9EFF] text-white shadow-[#7C9EFF]/30"
                   }`}
                 >
                   {isActive ? (
@@ -585,8 +599,14 @@ export default function FocusModal({
                 </button>
               </div>
 
-              <p className="mt-5 rounded-2xl bg-white/5 px-4 py-2.5 text-xs font-bold leading-relaxed text-gray-500">
-                <span className="block">{text.startLine}</span>
+              <p
+                className={`mt-5 rounded-2xl px-4 py-2.5 text-xs font-bold leading-relaxed transition-colors ${
+                  isActive
+                    ? "bg-[#7C9EFF]/10 text-[#AFC2FF]"
+                    : "bg-white/5 text-gray-500"
+                }`}
+              >
+                <span className="block">{focusStatusLine}</span>
               </p>
             </>
           )}
@@ -633,13 +653,16 @@ export default function FocusModal({
                         setSelectedSound(sound.id);
                         setSoundEnabled(true);
                       }}
-                      className={`mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border transition-all sm:h-12 sm:w-12 ${
+                      className={`relative mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border transition-all sm:h-12 sm:w-12 ${
                         active
                           ? "border-[#7C9EFF] bg-[#7C9EFF]/20 text-white"
                           : "border-white/5 bg-white/5 text-gray-500 hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       <Icon size={20} />
+                      {active && soundEnabled && (
+                        <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#AFC2FF] shadow-[0_0_10px_rgba(124,158,255,0.9)]" />
+                      )}
                     </button>
                   );
                 })}
